@@ -1,0 +1,8 @@
+CREATE TABLE `sites` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `order` int(11) DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `url` varchar(500) NOT NULL,
+  `icon` varchar(500) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
