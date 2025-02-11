@@ -1,13 +1,11 @@
 <?php
-// Конфігурація бази даних
-$host = 'localhost'; // Сервер БД
-$dbname = 'startpage_db'; // Назва бази
-$username = 'startpage_user'; // Логін
-$password = 'PASSWORD'; // Пароль (змініть, якщо потрібно)
+// Конфігурація
+$host = 'localhost';
+$dbname = 'homepage';
+$username = 'root';
+$password = '';
+$secret_key = 'my_secret_key';
 
-$secret_key = 'SECRET_KEY';
-
-// Підключення до MySQL
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -15,30 +13,34 @@ try {
     die("Помилка підключення до БД: " . $e->getMessage());
 }
 
-// Додавання нового сайту
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['key']) && $_GET['key'] == $secret_key) {
-    $name = $_POST['name'] ?? '';
-    $url = $_POST['url'] ?? '';
-    $icon = $_POST['icon'] ?? '';
+// Видалення сайту
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_id']) && isset($_GET['key']) && $_GET['key'] == $secret_key) {
+    $stmt = $pdo->prepare("DELETE FROM sites WHERE id = :id");
+    $stmt->execute(['id' => $_POST['delete_id']]);
+    header("Location: index.php?key=" . $secret_key);
+    exit();
+}
 
-    if (!empty($name) && !empty($url) && !empty($icon)) {
-        $stmt = $pdo->prepare("INSERT INTO sites (name, url, icon) VALUES (:name, :url, :icon)");
-        $stmt->execute(['name' => $name, 'url' => $url, 'icon' => $icon]);
-        $message = "Сайт '$name' успішно додано!";
-    } else {
-        $message = "Будь ласка, заповніть всі поля!";
-    }
+// Додавання сайту
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['key']) && $_GET['key'] == $secret_key && isset($_POST['name'], $_POST['url'], $_POST['icon'])) {
+    $stmt = $pdo->prepare("INSERT INTO sites (name, url, icon) VALUES (:name, :url, :icon)");
+    $stmt->execute([
+        'name' => $_POST['name'],
+        'url' => $_POST['url'],
+        'icon' => $_POST['icon']
+    ]);
+    header("Location: index.php?key=" . $secret_key);
+    exit();
 }
 
 // Отримання сайтів
-$query = "SELECT name, url, icon FROM sites ORDER BY `order`";
+$query = "SELECT id, name, url, icon FROM sites ORDER BY `order`";
 $stmt = $pdo->query($query);
 $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html lang="uk">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -50,7 +52,6 @@ $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background-size: cover;
             color: #ffffff;
         }
-
         .overlay {
             background-color: rgba(18, 18, 18, 0.25);
             position: absolute;
@@ -59,14 +60,13 @@ $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
             width: 100%;
             height: 100%;
         }
-
         .content {
             position: relative;
             z-index: 1;
             text-align: center;
         }
-
         .link-box {
+            position: relative;
             width: 100px;
             height: 100px;
             display: flex;
@@ -77,124 +77,129 @@ $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
             transition: 0.3s;
             margin: 10px auto;
         }
-
         .link-box:hover {
             background-color: #292929;
         }
-
         .link-box img {
             width: 50px;
             height: 50px;
         }
-
         .site-name {
             margin-top: 5px;
             text-align: center;
             font-size: 14px;
             color: #ffffff;
         }
-
-        .search-box {
-            max-width: 600px;
-            margin: 0 auto 40px;
+        .delete-btn {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 24px;
+            height: 24px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 16px;
+            line-height: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
         }
-
-        .search-input {
-            height: 50px;
-            font-size: 18px;
-            background-color: #1e1e1e;
-            border: 1px solid #444;
-            color: #fff;
+        .delete-btn:hover {
+            background: darkred;
+        }
+        .home-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 24px;
+            text-decoration: none;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.6);
             padding: 10px;
+            border-radius: 50%;
+            transition: 0.3s;
         }
-
-        .search-input::placeholder {
-            color: #bbb;
-        }
-
-        .search-button {
-            background-color: #007bff;
-            border-color: #007bff;
-            color: #fff;
-            font-size: 18px;
-        }
-
-        .search-button:hover {
-            background-color: #0056b3;
-            border-color: #004b9a;
-        }
-
-        .admin-panel {
-            background: #222;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 40px;
-            width: 400px;
-            text-align: left;
-        }
-
-        .admin-panel input {
-            margin-bottom: 10px;
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
-
 <body>
 
-    <div class="overlay"></div>
+<div class="overlay"></div>
 
-    <div class="container d-flex flex-column justify-content-center align-items-center vh-100 content">
+<!-- Кнопка "🏠" на домашню сторінку -->
+<a href="/" class="home-btn">🏠</a>
 
-        <form action="https://www.google.com/search" method="GET" class="search-box w-100">
-            <div class="input-group">
-                <input type="text" name="q" class="form-control search-input" placeholder="Пошук у Google">
-                <button type="submit" class="btn search-button">🔍</button>
-            </div>
-        </form>
+<!-- Кнопка "Шестерня" + поле "Пароль" -->
+<div class="position-absolute top-0 end-0 m-3">
+    <button id="settings-btn" class="btn btn-dark">⚙️</button>
+    <form id="password-form" action="" method="GET" class="d-none mt-2">
+        <input type="password" name="key" class="form-control" placeholder="Пароль">
+    </form>
+</div>
 
-        <h1 class="mb-4">&nbsp;</h1>
-
-        <div class="container">
-            <div class="row justify-content-center gap-3">
-                <?php foreach ($sites as $site): ?>
-                    <div class="col-lg-1 col-md-2 col-sm-3 col-4 d-flex flex-column align-items-center">
-                        <a href="<?= htmlspecialchars($site['url']) ?>" class="d-block text-decoration-none text-light">
-                            <div class="link-box">
-                                <img src="<?= htmlspecialchars($site['icon']) ?>" alt="<?= htmlspecialchars($site['name']) ?>">
-                            </div>
-                            <div class="site-name"><?= htmlspecialchars($site['name']) ?></div>
-                        </a>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+<div class="container d-flex flex-column justify-content-center align-items-center vh-100 content">
+    
+    <form action="https://www.google.com/search" method="GET" class="mb-4 w-50">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Пошук у Google">
+            <button type="submit" class="btn btn-primary">🔍</button>
         </div>
+    </form>
 
-        <?php if (isset($_GET['key']) && $_GET['key'] == $secret_key): ?>
-            <div class="admin-panel">
-                <h3>Панель адміністратора</h3>
-                <?php if (!empty($message)): ?>
-                    <div class="alert alert-info"><?= $message ?></div>
-                <?php endif; ?>
-                <form method="POST">
-                    <div class="mb-2">
-                        <label class="form-label">Назва сайту</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">URL сайту</label>
-                        <input type="url" name="url" class="form-control" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">URL іконки</label>
-                        <input type="url" name="icon" class="form-control" required value="favicon.ico">
-                    </div>
-                    <button type="submit" class="btn btn-success">Додати сайт</button>
-                </form>
-            </div>
-        <?php endif; ?>
+    <h1 class="mb-4">&nbsp;</h1>
 
+    <div class="container-lg">
+        <div class="row justify-content-center gap-4">
+            <?php foreach ($sites as $site): ?>
+                <div class="col-lg-1 col-md-3 col-sm-4 col-6 d-flex flex-column align-items-center position-relative">
+                    <a href="<?= htmlspecialchars($site['url']) ?>" class="d-block text-decoration-none text-light">
+                        <div class="link-box">
+                            <?php if (isset($_GET['key']) && $_GET['key'] == $secret_key): ?>
+                                <form method="POST" class="position-absolute" style="top: 0; right: 0;">
+                                    <input type="hidden" name="delete_id" value="<?= $site['id'] ?>">
+                                    <button type="submit" class="delete-btn">✖</button>
+                                </form>
+                            <?php endif; ?>
+                            <img src="<?= htmlspecialchars($site['icon']) ?>" alt="<?= htmlspecialchars($site['name']) ?>">
+                        </div>
+                        <div class="site-name"><?= htmlspecialchars($site['name']) ?></div>
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        </div>
     </div>
 
-</body>
+    <!-- Панель адміністратора -->
+    <?php if (isset($_GET['key']) && $_GET['key'] == $secret_key): ?>
+        <div class="mt-5 p-4 bg-dark rounded w-50">
+            <h3>Додати сайт</h3>
+            <form method="POST">
+                <div class="mb-2">
+                    <input type="text" name="name" class="form-control" placeholder="Назва" required>
+                </div>
+                <div class="mb-2">
+                    <input type="url" name="url" class="form-control" placeholder="URL" required>
+                </div>
+                <div class="mb-2">
+                    <input type="text" name="icon" class="form-control" placeholder="URL іконки" required>
+                </div>
+                <button type="submit" class="btn btn-success">Додати сайт</button>
+            </form>
+        </div>
+    <?php endif; ?>
 
+</div>
+
+<script>
+    document.getElementById('settings-btn').addEventListener('click', function() {
+        this.classList.add('d-none');
+        document.getElementById('password-form').classList.remove('d-none');
+    });
+</script>
+
+</body>
 </html>
