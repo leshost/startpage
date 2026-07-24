@@ -1,10 +1,21 @@
 <?php
 // Конфігурація
 $host = 'localhost';
-$dbname = 'homepage';
-$username = 'root';
-$password = '';
-$secret_key = 'my_secret_key';
+$dbname = 'startpage_site';
+$username = 'startpage_site';
+$password = 'JaLoiPeiw_TNhLm0';
+$secret_key = 'hastala8615';
+$user = '';
+
+if(isset($_GET['user'])) {
+    if($_GET['user'] == 'andjey') {
+        $user = " OR `user` = '1'";
+    }
+
+    if($_GET['user'] == 'a10') {
+        $user = " OR `user` = '2'";
+    }
+}    
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
@@ -34,9 +45,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['key']) && $_GET['key'] 
 }
 
 // Отримання сайтів
-$query = "SELECT id, name, url, icon FROM sites ORDER BY `order`";
+$query = "SELECT `id`, `name`, `url`, `icon` FROM `sites` WHERE `user` IS NULL ".$user." ORDER BY `order`";
 $stmt = $pdo->query($query);
 $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Отримати IP-адресу
+function getUserIP() {
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        return $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+    } else {
+        return $_SERVER['REMOTE_ADDR'];
+    }
+}
+
+$ip = getUserIP();
+$userAgent = $_SERVER['HTTP_USER_AGENT'];
+
+// Отримати геолокацію з ip-api.com
+$apiUrl = "http://ip-api.com/json/$ip?fields=status,message,country,regionName,city,zip,lat,lon,isp,org,as,query";
+$response = @file_get_contents($apiUrl);
+$data = $response ? json_decode($response, true) : null;
 ?>
 
 <!DOCTYPE html>
@@ -121,7 +151,37 @@ $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 50%;
             transition: 0.3s;
         }
+        .home-btn2 {
+            position: absolute;
+            top: 15px;
+            left: 65px;
+            font-size: 24px;
+            text-decoration: none;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        .home-btn3 {
+            position: absolute;
+            top: 15px;
+            left: 120px;
+            font-size: 24px;
+            text-decoration: none;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
         .home-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .home-btn2:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .home-btn3:hover {
             background: rgba(255, 255, 255, 0.3);
         }
     </style>
@@ -131,7 +191,9 @@ $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <div class="overlay"></div>
 
 <!-- Кнопка "🏠" на домашню сторінку -->
-<a href="/" class="home-btn">🏠</a>
+<a href="/" class="home-btn">🏠</a>&nbsp;
+<a href="/finance.php" class="home-btn2">💰</a>
+<a href="/pass.php" class="home-btn3">🔐</a>
 
 <!-- Кнопка "Шестерня" + поле "Пароль" -->
 <div class="position-absolute top-0 end-0 m-3">
@@ -142,20 +204,21 @@ $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <div class="container d-flex flex-column justify-content-center align-items-center vh-100 content">
-    
-    <form action="https://www.google.com/search" method="GET" class="mb-4 w-50">
+
+    <form action="https://www.google.com/search" method="GET" class="mb-4 w-50 d-none">
         <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Пошук у Google">
+            <input type="text" name="q" class="form-control" autofocus placeholder="Пошук у Google">
             <button type="submit" class="btn btn-primary">🔍</button>
         </div>
     </form>
 
-    <h1 class="mb-4">&nbsp;</h1>
+    <h1 class="mb-0 d-none_"><?php echo $ip; ?></h1>
+    <p class="mb-4"><?php echo $data['country'].', '.$data['city'].' | <b>'.$data['isp'].'</b><br>'.$userAgent; ?></p>
 
     <div class="container-lg">
         <div class="row justify-content-center gap-4">
             <?php foreach ($sites as $site): ?>
-                <div class="col-lg-1 col-md-3 col-sm-4 col-6 d-flex flex-column align-items-center position-relative">
+                <div class="col-lg-1 col-md-3 col-sm-2 col-3 d-flex flex-column align-items-center position-relative">
                     <a href="<?= htmlspecialchars($site['url']) ?>" class="d-block text-decoration-none text-light">
                         <div class="link-box">
                             <?php if (isset($_GET['key']) && $_GET['key'] == $secret_key): ?>
@@ -192,7 +255,9 @@ $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     <?php endif; ?>
 
+
 </div>
+
 
 <script>
     document.getElementById('settings-btn').addEventListener('click', function() {
