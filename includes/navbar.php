@@ -1,6 +1,12 @@
+<?php
+$userQuery = '';
+if (isset($_GET['user'])) {
+    $userQuery = '?user=' . urlencode($_GET['user']);
+}
+?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm border-bottom border-secondary">
     <div class="container-fluid">
-        <a class="navbar-brand text-success fw-bold" href="/">
+        <a class="navbar-brand text-success fw-bold" href="/<?= $userQuery ?>">
             <i class="bi bi-rocket-takeoff"></i> Startpage Tools
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -9,22 +15,22 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/index.php' || $_SERVER['PHP_SELF'] == '/') ? 'active' : '' ?>" href="/">
+                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/index.php' || $_SERVER['PHP_SELF'] == '/') ? 'active' : '' ?>" href="/<?= $userQuery ?>">
                         <i class="bi bi-house-door"></i> Головна
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/finance.php') ? 'active' : '' ?>" href="/finance.php">
+                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/finance.php') ? 'active' : '' ?>" href="/finance.php<?= $userQuery ?>">
                         <i class="bi bi-cash-stack"></i> Калькулятор
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/pass.php') ? 'active' : '' ?>" href="/pass.php">
+                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/pass.php') ? 'active' : '' ?>" href="/pass.php<?= $userQuery ?>">
                         <i class="bi bi-key"></i> Генератор паролів
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/check.php') ? 'active' : '' ?>" href="/check.php">
+                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/check.php') ? 'active' : '' ?>" href="/check.php<?= $userQuery ?>">
                         <i class="bi bi-shield-check"></i> Перевірка паролів
                     </a>
                 </li>
