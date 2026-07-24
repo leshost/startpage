@@ -253,11 +253,73 @@ function setPreset(n, w, s) {
     document.getElementById('needPercent').value = n;
     document.getElementById('wantPercent').value = w;
     document.getElementById('savePercent').value = s;
+    
+    // Update lastValues array so auto-balance works correctly after preset
+    lastValues = [n, w, s];
+    
     calculate();
 }
 
 // Event Listeners
-document.querySelectorAll('input[type="number"]').forEach(i => i.oninput = calculate);
+document.getElementById('salary').addEventListener('input', calculate);
+document.getElementById('annualYield').addEventListener('input', calculate);
+
+// Auto-balancing percentages
+const pInputs = [
+    document.getElementById('needPercent'),
+    document.getElementById('wantPercent'),
+    document.getElementById('savePercent')
+];
+
+let lastValues = pInputs.map(i => +i.value);
+
+pInputs.forEach((input, index) => {
+    input.addEventListener('input', function() {
+        let val = +this.value;
+        if (val < 0) { val = 0; this.value = 0; }
+        if (val > 100) { val = 100; this.value = 100; }
+        
+        let diff = val - lastValues[index];
+        if (diff === 0) {
+            calculate();
+            return;
+        }
+        
+        let others = [0, 1, 2].filter(i => i !== index);
+        let other1 = others[0];
+        let other2 = others[1];
+        
+        let halfDiff = Math.round(diff / 2);
+        let new1 = lastValues[other1] - halfDiff;
+        let new2 = lastValues[other2] - (diff - halfDiff);
+        
+        // Fix bounds
+        if (new1 < 0) {
+            new2 += new1; 
+            new1 = 0;
+        } else if (new2 < 0) {
+            new1 += new2;
+            new2 = 0;
+        }
+        
+        if (new1 > 100) {
+            new2 += (new1 - 100);
+            new1 = 100;
+        } else if (new2 > 100) {
+            new1 += (new2 - 100);
+            new2 = 100;
+        }
+        
+        lastValues[index] = val;
+        lastValues[other1] = new1;
+        lastValues[other2] = new2;
+        
+        pInputs[other1].value = new1;
+        pInputs[other2].value = new2;
+        
+        calculate();
+    });
+});
 </script>
 
 <?php require_once '../includes/footer.php'; ?>

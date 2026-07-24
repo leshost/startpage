@@ -10,30 +10,73 @@ $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlen
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
+                <!-- Головна -->
                 <li class="nav-item">
                     <a class="nav-link <?= ($current_page == '/index.php' || $current_page == '/') ? 'active' : '' ?>" href="/<?= $userQuery ?>">
                         <i class="bi bi-house-door"></i> Головна
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == '/modules/kanban.php') ? 'active' : '' ?>" href="/modules/kanban.php<?= $userQuery ?>">
-                        <i class="bi bi-kanban"></i> Канбан-дошка
+                
+                <!-- Фінанси -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <?= in_array($current_page, ['/modules/kanban.php', '/modules/finance.php']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-briefcase"></i> Продуктивність
                     </a>
+                    <ul class="dropdown-menu dropdown-menu-dark shadow">
+                        <li>
+                            <a class="dropdown-item <?= ($current_page == '/modules/kanban.php') ? 'active' : '' ?>" href="/modules/kanban.php<?= $userQuery ?>">
+                                <i class="bi bi-kanban"></i> Канбан-дошка
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?= ($current_page == '/modules/finance.php') ? 'active' : '' ?>" href="/modules/finance.php<?= $userQuery ?>">
+                                <i class="bi bi-cash-stack"></i> Калькулятор фінансів
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == '/modules/finance.php') ? 'active' : '' ?>" href="/modules/finance.php<?= $userQuery ?>">
-                        <i class="bi bi-cash-stack"></i> Калькулятор
+                
+                <!-- Паролі -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <?= in_array($current_page, ['/modules/pass.php', '/modules/check.php']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-shield-lock"></i> Безпека
                     </a>
+                    <ul class="dropdown-menu dropdown-menu-dark shadow">
+                        <li>
+                            <a class="dropdown-item <?= ($current_page == '/modules/pass.php') ? 'active' : '' ?>" href="/modules/pass.php<?= $userQuery ?>">
+                                <i class="bi bi-key"></i> Генератор паролів
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?= ($current_page == '/modules/check.php') ? 'active' : '' ?>" href="/modules/check.php<?= $userQuery ?>">
+                                <i class="bi bi-shield-check"></i> Перевірка паролів
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == '/modules/pass.php') ? 'active' : '' ?>" href="/modules/pass.php<?= $userQuery ?>">
-                        <i class="bi bi-key"></i> Генератор
+
+                <!-- Інструменти -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <?= in_array($current_page, ['/modules/qr.php', '/modules/json.php']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-tools"></i> Інструменти
                     </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == '/modules/check.php') ? 'active' : '' ?>" href="/modules/check.php<?= $userQuery ?>">
-                        <i class="bi bi-shield-check"></i> Перевірка пароля
-                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark shadow">
+                        <li>
+                            <a class="dropdown-item <?= ($current_page == '/modules/qr.php') ? 'active' : '' ?>" href="/modules/qr.php<?= $userQuery ?>">
+                                <i class="bi bi-qr-code"></i> Генератор QR
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?= ($current_page == '/modules/json.php') ? 'active' : '' ?>" href="/modules/json.php<?= $userQuery ?>">
+                                <i class="bi bi-braces"></i> JSON Форматер
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?= ($current_page == '/modules/dev-tools.php') ? 'active' : '' ?>" href="/modules/dev-tools.php<?= $userQuery ?>">
+                                <i class="bi bi-wrench-adjustable"></i> Конвертер / Хеші
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
             <ul class="navbar-nav ms-auto align-items-center">

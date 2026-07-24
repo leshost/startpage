@@ -11,9 +11,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     
     // Delete Site
     if ($_POST['action'] === 'delete' && isset($_POST['id'])) {
-        $stmt = $pdo->prepare("DELETE FROM sites WHERE id = :id");
-        if($stmt->execute(['id' => (int)$_POST['id']])) {
-            echo json_encode(['success' => true]);
+        $stmt = $pdo->prepare("DELETE FROM sites WHERE id = :id AND user = :user_id");
+        if($stmt->execute(['id' => (int)$_POST['id'], 'user_id' => $_SESSION['user_id']])) {
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Немає прав на видалення або сайт не знайдено']);
+            }
         } else {
             echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
         }
@@ -47,16 +51,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         }
         exit();
     }
-
+    
+    // Reorder Sites
+    if ($_POST['action'] === 'reorder' && isset($_POST['order'])) {
+        $orderArray = json_decode($_POST['order'], true);
+        if (is_array($orderArray)) {
+            $stmt = $pdo->prepare("UPDATE sites SET `order` = :order WHERE id = :id");
+            foreach ($orderArray as $index => $id) {
+                $stmt->execute(['order' => $index, 'id' => (int)$id]);
+            }
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Невірний формат даних']);
+        }
+        exit();
+    }
 
 }
 
 // Fetch Sites
 if (isLoggedIn()) {
-    $stmt = $pdo->prepare("SELECT `id`, `name`, `url`, `icon` FROM `sites` WHERE `user` IS NULL OR `user` = ? ORDER BY `order`");
+    $stmt = $pdo->prepare("SELECT `id`, `name`, `url`, `icon`, `user` FROM `sites` WHERE `user` IS NULL OR `user` = ? ORDER BY `order`");
     $stmt->execute([$_SESSION['user_id']]);
 } else {
-    $stmt = $pdo->query("SELECT `id`, `name`, `url`, `icon` FROM `sites` WHERE `user` IS NULL ORDER BY `order`");
+    $stmt = $pdo->query("SELECT `id`, `name`, `url`, `icon`, `user` FROM `sites` WHERE `user` IS NULL ORDER BY `order`");
 }
 $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -74,6 +92,15 @@ require_once 'includes/header.php';
 <div class="startpage-overlay"></div>
 
 <?php require_once 'includes/navbar.php'; ?>
+
+<style>
+body.edit-mode-active .site-item {
+    cursor: grab;
+}
+body.edit-mode-active .site-item:active {
+    cursor: grabbing;
+}
+</style>
 
 <div class="container d-flex flex-column justify-content-center align-items-center min-vh-100 content py-5">
     
@@ -94,7 +121,7 @@ require_once 'includes/header.php';
                 <div class="col-lg-1 col-md-3 col-sm-4 col-4 d-flex flex-column align-items-center position-relative site-item" data-id="<?= $site['id'] ?>">
                     <a href="<?= htmlspecialchars($site['url']) ?>" class="d-block text-decoration-none text-light w-100">
                         <div class="link-box">
-                            <?php if (isLoggedIn()): ?>
+                            <?php if (isLoggedIn() && $site['user'] == $_SESSION['user_id']): ?>
                                 <button type="button" class="delete-btn d-none edit-element" onclick="deleteSite(event, <?= $site['id'] ?>)">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
@@ -129,8 +156,38 @@ require_once 'includes/header.php';
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
 <?php if (isLoggedIn()): ?>
+// Initialize Sortable
+const container = document.getElementById('sites-container');
+let sortable;
+if (container) {
+    sortable = new Sortable(container, {
+        animation: 150,
+        disabled: true, // Disabled by default until Edit Mode is active
+        ghostClass: 'opacity-50',
+        onEnd: function (evt) {
+            const itemEls = container.querySelectorAll('.site-item');
+            const newOrder = Array.from(itemEls).map(el => el.getAttribute('data-id'));
+            
+            const formData = new FormData();
+            formData.append('action', 'reorder');
+            formData.append('order', JSON.stringify(newOrder));
+            
+            fetch('index.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) toastr.error(data.message || 'Помилка збереження порядку');
+            })
+            .catch(err => console.error(err));
+        }
+    });
+}
+
 // Edit Mode Toggle
 document.getElementById('editModeToggle')?.addEventListener('change', function() {
     const isEdit = this.checked;
@@ -138,6 +195,13 @@ document.getElementById('editModeToggle')?.addEventListener('change', function()
         if (isEdit) el.classList.remove('d-none');
         else el.classList.add('d-none');
     });
+    
+    // Toggle Drag & Drop
+    if (sortable) sortable.option('disabled', !isEdit);
+    
+    // Toggle cursor styles
+    if (isEdit) document.body.classList.add('edit-mode-active');
+    else document.body.classList.remove('edit-mode-active');
 });
 
 // Delete Site AJAX
