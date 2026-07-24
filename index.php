@@ -2,6 +2,41 @@
 require_once 'config/config.php';
 require_once 'includes/functions.php';
 
+// Автоматичне створення таблиць бази даних при першому запуску
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `users` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `username` VARCHAR(255) NOT NULL UNIQUE,
+            `password_hash` VARCHAR(255) NOT NULL,
+            `secret_key` VARCHAR(64) NOT NULL UNIQUE,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        
+        CREATE TABLE IF NOT EXISTS `sites` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `order` INT DEFAULT 0,
+            `name` VARCHAR(255) NOT NULL,
+            `url` VARCHAR(500) NOT NULL,
+            `icon` VARCHAR(500) NOT NULL,
+            `user` INT DEFAULT NULL,
+            FOREIGN KEY (`user`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        
+        CREATE TABLE IF NOT EXISTS `tasks` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT NOT NULL,
+            `title` VARCHAR(255) NOT NULL,
+            `status` ENUM('todo', 'in_progress', 'done') NOT NULL DEFAULT 'todo',
+            `order_num` INT DEFAULT 0,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+} catch (PDOException $e) {
+    die("Помилка автоматичного створення таблиць: " . $e->getMessage());
+}
+
 // AJAX Actions
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     if (!isLoggedIn()) {
