@@ -1,231 +1,156 @@
 <?php
-// Конфігурація
-$host = 'localhost';
-$dbname = 'startpage_site';
-$username = 'startpage_site';
-$password = 'JaLoiPeiw_TNhLm0';
-$secret_key = 'hastala8615';
-$user = '';
+require_once 'config.php';
 
+// AJAX Actions
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
+    if (!isLoggedIn()) {
+        echo json_encode(['success' => false, 'message' => 'Несанкціонований доступ']);
+        exit();
+    }
+    
+    // Delete Site
+    if ($_POST['action'] === 'delete' && isset($_POST['id'])) {
+        $stmt = $pdo->prepare("DELETE FROM sites WHERE id = :id");
+        if($stmt->execute(['id' => (int)$_POST['id']])) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
+        }
+        exit();
+    }
+    
+    // Add Site
+    if ($_POST['action'] === 'add' && isset($_POST['name'], $_POST['url'], $_POST['icon'])) {
+        $stmt = $pdo->prepare("INSERT INTO sites (name, url, icon) VALUES (:name, :url, :icon)");
+        if($stmt->execute([
+            'name' => $_POST['name'],
+            'url' => $_POST['url'],
+            'icon' => $_POST['icon']
+        ])) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
+        }
+        exit();
+    }
+
+
+}
+
+// Get user filter from URL
+$user_filter = "";
 if(isset($_GET['user'])) {
     if($_GET['user'] == 'andjey') {
-        $user = " OR `user` = '1'";
+        $user_filter = " OR `user` = '1'";
+    } elseif($_GET['user'] == 'a10') {
+        $user_filter = " OR `user` = '2'";
     }
-
-    if($_GET['user'] == 'a10') {
-        $user = " OR `user` = '2'";
-    }
-}    
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Помилка підключення до БД: " . $e->getMessage());
 }
 
-// Видалення сайту
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_id']) && isset($_GET['key']) && $_GET['key'] == $secret_key) {
-    $stmt = $pdo->prepare("DELETE FROM sites WHERE id = :id");
-    $stmt->execute(['id' => $_POST['delete_id']]);
-    header("Location: index.php?key=" . $secret_key);
-    exit();
-}
-
-// Додавання сайту
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['key']) && $_GET['key'] == $secret_key && isset($_POST['name'], $_POST['url'], $_POST['icon'])) {
-    $stmt = $pdo->prepare("INSERT INTO sites (name, url, icon) VALUES (:name, :url, :icon)");
-    $stmt->execute([
-        'name' => $_POST['name'],
-        'url' => $_POST['url'],
-        'icon' => $_POST['icon']
-    ]);
-    header("Location: index.php?key=" . $secret_key);
-    exit();
-}
-
-// Отримання сайтів
-$query = "SELECT `id`, `name`, `url`, `icon` FROM `sites` WHERE `user` IS NULL ".$user." ORDER BY `order`";
+// Fetch Sites
+$query = "SELECT `id`, `name`, `url`, `icon` FROM `sites` WHERE `user` IS NULL " . $user_filter . " ORDER BY `order`";
 $stmt = $pdo->query($query);
 $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Отримати IP-адресу
 function getUserIP() {
-    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-        return $_SERVER['HTTP_CLIENT_IP'];
-    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
-    } else {
-        return $_SERVER['REMOTE_ADDR'];
-    }
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) return $_SERVER['HTTP_CLIENT_IP'];
+    elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+    else return $_SERVER['REMOTE_ADDR'];
 }
 
-$ip = getUserIP();
-$userAgent = $_SERVER['HTTP_USER_AGENT'];
+function getClientInfo() {
+    $u_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $bname = 'Unknown Browser';
+    $platform = 'Unknown OS';
+    $ub = 'Unknown';
+    $version = "";
 
-// Отримати геолокацію з ip-api.com
-$apiUrl = "http://ip-api.com/json/$ip?fields=status,message,country,regionName,city,zip,lat,lon,isp,org,as,query";
-$response = @file_get_contents($apiUrl);
-$data = $response ? json_decode($response, true) : null;
+    // Detect Platform/OS
+    if (preg_match('/linux/i', $u_agent)) $platform = 'Linux';
+    elseif (preg_match('/macintosh|mac os x/i', $u_agent)) $platform = 'Mac';
+    elseif (preg_match('/windows|win32/i', $u_agent)) $platform = 'Windows';
+    elseif (preg_match('/android/i', $u_agent)) $platform = 'Android';
+    elseif (preg_match('/iphone/i', $u_agent)) $platform = 'iPhone';
+    elseif (preg_match('/ipad/i', $u_agent)) $platform = 'iPad';
+    
+    if (preg_match('/windows nt 10/i', $u_agent)) $platform = 'Windows 10/11';
+    elseif (preg_match('/windows nt 6.3/i', $u_agent)) $platform = 'Windows 8.1';
+    elseif (preg_match('/windows nt 6.2/i', $u_agent)) $platform = 'Windows 8';
+    elseif (preg_match('/windows nt 6.1/i', $u_agent)) $platform = 'Windows 7';
+
+    if (preg_match('/mac os x ([0-9_]+)/i', $u_agent, $m)) $platform = 'macOS ' . str_replace('_', '.', $m[1]);
+    if (preg_match('/android ([0-9\.]+)/i', $u_agent, $m)) $platform = 'Android ' . $m[1];
+    if (preg_match('/os ([0-9_]+) like mac os x/i', $u_agent, $m)) $platform .= ' iOS ' . str_replace('_', '.', $m[1]);
+
+    // Detect Browser
+    if (preg_match('/MSIE/i', $u_agent) && !preg_match('/Opera/i', $u_agent)) { $bname = 'Internet Explorer'; $ub = "MSIE"; }
+    elseif (preg_match('/Trident/i', $u_agent)) { $bname = 'Internet Explorer'; $ub = "rv"; }
+    elseif (preg_match('/Firefox/i', $u_agent)) { $bname = 'Mozilla Firefox'; $ub = "Firefox"; }
+    elseif (preg_match('/OPR/i', $u_agent) || preg_match('/Opera/i', $u_agent)) { $bname = 'Opera'; $ub = "OPR"; }
+    elseif (preg_match('/Edg/i', $u_agent)) { $bname = 'Microsoft Edge'; $ub = "Edg"; }
+    elseif (preg_match('/Chrome/i', $u_agent)) { $bname = 'Google Chrome'; $ub = "Chrome"; }
+    elseif (preg_match('/Safari/i', $u_agent)) { $bname = 'Apple Safari'; $ub = "Safari"; }
+
+    // Detect Version
+    $pattern = '#(?<browser>' . $ub . '|Version)[/ ]+(?<version>[0-9.|a-zA-Z.]*)#';
+    preg_match_all($pattern, $u_agent, $matches);
+    if (count($matches['browser']) != 1) {
+        if (strripos($u_agent, "Version") < strripos($u_agent, $ub)) $version = $matches['version'][0] ?? '';
+        else $version = $matches['version'][1] ?? '';
+    } else {
+        $version = $matches['version'][0] ?? '';
+    }
+    
+    if (!$version) $version = "?";
+    
+    // Architecture
+    $arch = "";
+    if (preg_match('/x86_64|Win64|WOW64|x64/i', $u_agent)) $arch = ' (64-bit)';
+    elseif (preg_match('/i686|i386|Win32/i', $u_agent)) $arch = ' (32-bit)';
+
+    return [
+        'browser' => "$bname (v$version)",
+        'os' => "$platform$arch",
+        'raw' => $u_agent
+    ];
+}
+
+$userIp = getUserIP();
+$clientInfo = getClientInfo();
+
+$pageTitle = 'Головна';
+$bodyClass = 'startpage-body';
+
+require_once 'includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Стартова сторінка</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: url('bg.avif') no-repeat center center fixed;
-            background-size: cover;
-            color: #ffffff;
-        }
-        .overlay {
-            background-color: rgba(18, 18, 18, 0.25);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        .content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-        }
-        .link-box {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            transition: 0.3s;
-            margin: 10px auto;
-        }
-        .link-box:hover {
-            background-color: #292929;
-        }
-        .link-box img {
-            width: 50px;
-            height: 50px;
-        }
-        .site-name {
-            margin-top: 5px;
-            text-align: center;
-            font-size: 14px;
-            color: #ffffff;
-        }
-        .delete-btn {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 24px;
-            height: 24px;
-            background: red;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 16px;
-            line-height: 24px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .delete-btn:hover {
-            background: darkred;
-        }
-        .home-btn {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 24px;
-            text-decoration: none;
-            color: #ffffff;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-        .home-btn2 {
-            position: absolute;
-            top: 15px;
-            left: 65px;
-            font-size: 24px;
-            text-decoration: none;
-            color: #ffffff;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-        .home-btn3 {
-            position: absolute;
-            top: 15px;
-            left: 120px;
-            font-size: 24px;
-            text-decoration: none;
-            color: #ffffff;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-        .home-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        .home-btn2:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        .home-btn3:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-    </style>
-</head>
-<body>
+<div class="startpage-overlay"></div>
 
-<div class="overlay"></div>
+<?php require_once 'includes/navbar.php'; ?>
 
-<!-- Кнопка "🏠" на домашню сторінку -->
-<a href="/" class="home-btn">🏠</a>&nbsp;
-<a href="/finance.php" class="home-btn2">💰</a>
-<a href="/pass.php" class="home-btn3">🔐</a>
+<div class="container d-flex flex-column justify-content-center align-items-center min-vh-100 content py-5">
+    
+    <!-- IP and OS Info -->
+    <div class="text-center text-light text-shadow mb-5 mt-3">
+        <h1 class="display-3 fw-bold mb-3"><?= htmlspecialchars($userIp) ?></h1>
+        <p class="fs-4 text-light mb-1">
+            <i class="bi bi-browser-chrome text-info"></i> <?= htmlspecialchars($clientInfo['browser']) ?> &nbsp;|&nbsp; 
+            <i class="bi bi-display text-warning"></i> <?= htmlspecialchars($clientInfo['os']) ?>
+        </p>
+        <p class="text-secondary small font-monospace mt-2 mx-auto" style="max-width: 600px;"><?= htmlspecialchars($clientInfo['raw']) ?></p>
+    </div>
 
-<!-- Кнопка "Шестерня" + поле "Пароль" -->
-<div class="position-absolute top-0 end-0 m-3">
-    <button id="settings-btn" class="btn btn-dark">⚙️</button>
-    <form id="password-form" action="" method="GET" class="d-none mt-2">
-        <input type="password" name="key" class="form-control" placeholder="Пароль">
-    </form>
-</div>
-
-<div class="container d-flex flex-column justify-content-center align-items-center vh-100 content">
-
-    <form action="https://www.google.com/search" method="GET" class="mb-4 w-50 d-none">
-        <div class="input-group">
-            <input type="text" name="q" class="form-control" autofocus placeholder="Пошук у Google">
-            <button type="submit" class="btn btn-primary">🔍</button>
-        </div>
-    </form>
-
-    <h1 class="mb-0 d-none_"><?php echo $ip; ?></h1>
-    <p class="mb-4"><?php echo $data['country'].', '.$data['city'].' | <b>'.$data['isp'].'</b><br>'.$userAgent; ?></p>
-
+    <!-- Sites Grid -->
     <div class="container-lg">
-        <div class="row justify-content-center gap-4">
+        <div class="row justify-content-center gap-4" id="sites-container">
             <?php foreach ($sites as $site): ?>
-                <div class="col-lg-1 col-md-3 col-sm-2 col-3 d-flex flex-column align-items-center position-relative">
-                    <a href="<?= htmlspecialchars($site['url']) ?>" class="d-block text-decoration-none text-light">
+                <div class="col-lg-1 col-md-3 col-sm-4 col-4 d-flex flex-column align-items-center position-relative site-item" data-id="<?= $site['id'] ?>">
+                    <a href="<?= htmlspecialchars($site['url']) ?>" class="d-block text-decoration-none text-light w-100">
                         <div class="link-box">
-                            <?php if (isset($_GET['key']) && $_GET['key'] == $secret_key): ?>
-                                <form method="POST" class="position-absolute" style="top: 0; right: 0;">
-                                    <input type="hidden" name="delete_id" value="<?= $site['id'] ?>">
-                                    <button type="submit" class="delete-btn">✖</button>
-                                </form>
+                            <?php if (isLoggedIn()): ?>
+                                <button type="button" class="delete-btn" onclick="deleteSite(event, <?= $site['id'] ?>)">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
                             <?php endif; ?>
                             <img src="<?= htmlspecialchars($site['icon']) ?>" alt="<?= htmlspecialchars($site['name']) ?>">
                         </div>
@@ -236,35 +161,81 @@ $data = $response ? json_decode($response, true) : null;
         </div>
     </div>
 
-    <!-- Панель адміністратора -->
-    <?php if (isset($_GET['key']) && $_GET['key'] == $secret_key): ?>
-        <div class="mt-5 p-4 bg-dark rounded w-50">
-            <h3>Додати сайт</h3>
-            <form method="POST">
-                <div class="mb-2">
-                    <input type="text" name="name" class="form-control" placeholder="Назва" required>
+    <!-- Admin Panel: Add Site -->
+    <?php if (isLoggedIn()): ?>
+        <div class="mt-5 p-4 tool-box w-100" style="max-width: 500px;">
+            <h4 class="mb-3"><i class="bi bi-plus-circle"></i> Додати сайт</h4>
+            <form id="addSiteForm">
+                <div class="mb-3">
+                    <input type="text" id="addName" class="form-control" placeholder="Назва" required>
                 </div>
-                <div class="mb-2">
-                    <input type="url" name="url" class="form-control" placeholder="URL" required>
+                <div class="mb-3">
+                    <input type="url" id="addUrl" class="form-control" placeholder="URL" required>
                 </div>
-                <div class="mb-2">
-                    <input type="text" name="icon" class="form-control" placeholder="URL іконки" required>
+                <div class="mb-3">
+                    <input type="text" id="addIcon" class="form-control" placeholder="URL іконки" required>
                 </div>
-                <button type="submit" class="btn btn-success">Додати сайт</button>
+                <button type="submit" class="btn btn-success w-100">Додати сайт</button>
             </form>
         </div>
     <?php endif; ?>
 
-
 </div>
 
-
 <script>
-    document.getElementById('settings-btn').addEventListener('click', function() {
-        this.classList.add('d-none');
-        document.getElementById('password-form').classList.remove('d-none');
-    });
+<?php if (isLoggedIn()): ?>
+// Delete Site AJAX
+function deleteSite(event, id) {
+    event.preventDefault(); // Prevent navigating to the URL
+    if (!confirm('Ви впевнені, що хочете видалити цей сайт?')) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'delete');
+    formData.append('id', id);
+
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success('Сайт видалено!');
+            // Remove element from DOM
+            document.querySelector(`.site-item[data-id="${id}"]`).remove();
+        } else {
+            toastr.error(data.message || 'Помилка видалення');
+        }
+    })
+    .catch(handleAjaxError);
+}
+
+// Add Site AJAX
+document.getElementById('addSiteForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('action', 'add');
+    formData.append('name', document.getElementById('addName').value);
+    formData.append('url', document.getElementById('addUrl').value);
+    formData.append('icon', document.getElementById('addIcon').value);
+
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success('Сайт додано! Перезавантаження...');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            toastr.error(data.message || 'Помилка додавання');
+        }
+    })
+    .catch(handleAjaxError);
+});
+<?php endif; ?>
 </script>
 
-</body>
-</html>
+<?php require_once 'includes/footer.php'; ?>

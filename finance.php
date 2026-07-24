@@ -1,322 +1,170 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Фінансовий калькулятор</title>
+<?php
+require_once 'config.php';
 
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background: #121212;
-    color: #e0e0e0;
-    margin: 0;
-}
+$pageTitle = 'Фінансовий калькулятор';
+require_once 'includes/header.php';
+require_once 'includes/navbar.php';
+?>
 
-/* NAVBAR */
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #1e1e1e;
-    padding: 15px 20px;
-    flex-wrap: wrap;
-}
-
-.logo {
-    font-size: 18px;
-    font-weight: bold;
-    color: #4CAF50;
-    text-decoration: none;
-}
-
-.menu {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.menu a {
-    color: #ccc;
-    text-decoration: none;
-    font-size: 14px;
-}
-
-/* TITLE */
-.page-title {
-    padding: 15px 20px 0;
-    font-size: 20px;
-    font-weight: bold;
-}
-
-/* LAYOUT */
-.wrapper {
-    display: flex;
-    gap: 20px;
-    padding: 20px;
-    flex-wrap: wrap;
-}
-
-/* BLOCKS */
-.container, .presets, .tips {
-    background: #1e1e1e;
-    padding: 20px;
-    border-radius: 12px;
-    flex: 1;
-    min-width: 280px;
-}
-
-/* 🔥 НОВА ФОРМА */
-.field {
-    margin-bottom: 18px;
-}
-
-.field label {
-    display: block;
-    font-size: 13px;
-    color: #aaa;
-    margin-bottom: 6px;
-}
-
-.field input {
-    width: 100%;
-    padding: 8px 10px;
-    font-size: 15px;
-    border-radius: 6px;
-    border: 1px solid #333;
-    background: #2a2a2a;
-    color: #fff;
-}
-
-/* результат */
-.result-line {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 6px;
-    padding: 6px 10px;
-    background: #252525;
-    border-radius: 6px;
-}
-
-.result-label {
-    font-size: 13px;
-    color: #888;
-}
-
-.result-value {
-    font-size: 18px;
-    font-weight: bold;
-    color: #90caf9;
-}
-
-/* total */
-#totalCheck {
-    margin-top: 15px;
-    font-size: 14px;
-    text-align: center;
-}
-
-/* BUTTONS */
-.preset-btn {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 10px;
-    border: none;
-    border-radius: 8px;
-    background: #2a2a2a;
-    color: #ccc;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.preset-btn.active {
-    background: #4CAF50;
-    color: #fff;
-}
-
-/* SAVINGS */
-.savings-box {
-    margin-top: 15px;
-    padding: 12px;
-    background: #252525;
-    border-radius: 10px;
-}
-
-/* TIPS */
-.tips p {
-    font-size: 14px;
-    color: #ccc;
-    margin-bottom: 12px;
-    line-height: 1.6;
-}
-
-.highlight {
-    background: #263238;
-    padding: 10px;
-    border-radius: 8px;
-    color: #90caf9;
-}
-
-/* MOBILE */
-@media (max-width: 768px) {
-
-    .wrapper {
-        flex-direction: column;
-        padding: 10px;
-    }
-
-    .navbar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .menu {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .container, .presets, .tips {
-        width: 100%;
-    }
-}
-</style>
-</head>
-
-<body>
-
-<div class="navbar">
-    <a class="logo" href="https://startpage.uax.cloud/?user=andjey">💰 Finance Tool</a>
-    <div class="menu">
-        <a href="https://startpage.uax.cloud/?user=andjey">Головна</a>
-        <a href="/finance.php">Калькулятор</a>
-        <a href="https://ip.uax.cloud/">MyIP</a>
-    </div>
-</div>
-
-<div class="page-title">
-    Фінансовий калькулятор розподілу зарплати
-</div>
-
-<div class="wrapper">
-
-    <!-- 🔥 КАЛЬКУЛЯТОР -->
-    <div class="container">
-        <h3>Розподіл</h3>
-
-        <div class="field">
-            <label>Зарплата (грн)</label>
-            <input type="number" id="salary" value="20000">
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-center"><i class="bi bi-cash-stack text-success"></i> Фінансовий калькулятор розподілу зарплати</h2>
         </div>
+    </div>
 
-        <div class="field">
-            <label>Обов’язкові витрати (%)</label>
-            <input type="number" id="needPercent" value="60">
-            <div class="result-line">
-                <span class="result-label">Сума</span>
-                <span class="result-value" id="needResult"></span>
+    <div class="row g-4">
+        <!-- Калькулятор -->
+        <div class="col-md-6 col-lg-4">
+            <div class="tool-box h-100">
+                <h3>Розподіл</h3>
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Зарплата (грн)</label>
+                    <input type="number" id="salary" class="form-control bg-dark text-light border-secondary" value="20000">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Обов’язкові витрати (%)</label>
+                    <input type="number" id="needPercent" class="form-control bg-dark text-light border-secondary mb-2" value="60">
+                    <div class="d-flex justify-content-between align-items-center bg-dark p-2 rounded">
+                        <span class="text-secondary small">Сума</span>
+                        <span class="text-info fw-bold" id="needResult"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Гнучкі витрати (%)</label>
+                    <input type="number" id="wantPercent" class="form-control bg-dark text-light border-secondary mb-2" value="20">
+                    <div class="d-flex justify-content-between align-items-center bg-dark p-2 rounded">
+                        <span class="text-secondary small">Сума</span>
+                        <span class="text-info fw-bold" id="wantResult"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Накопичення (%)</label>
+                    <input type="number" id="savePercent" class="form-control bg-dark text-light border-secondary mb-2" value="20">
+                    <div class="d-flex justify-content-between align-items-center bg-dark p-2 rounded">
+                        <span class="text-secondary small">Сума</span>
+                        <span class="text-info fw-bold" id="saveResult"></span>
+                    </div>
+                </div>
+
+                <div id="totalCheck" class="text-center mt-3 fw-bold"></div>
             </div>
         </div>
 
-        <div class="field">
-            <label>Гнучкі витрати (%)</label>
-            <input type="number" id="wantPercent" value="20">
-            <div class="result-line">
-                <span class="result-label">Сума</span>
-                <span class="result-value" id="wantResult"></span>
+        <!-- Пресети -->
+        <div class="col-md-6 col-lg-4">
+            <div class="tool-box h-100">
+                <h3>Варіанти</h3>
+                <div class="d-grid gap-2 mb-4">
+                    <button class="btn btn-outline-secondary preset-btn" data-preset="77-7-16" onclick="setPreset(77,7,16)">77 / 7 / 16</button>
+                    <button class="btn btn-outline-secondary preset-btn" data-preset="75-10-15" onclick="setPreset(75,10,15)">75 / 10 / 15</button>
+                    <button class="btn btn-outline-secondary preset-btn" data-preset="70-15-15" onclick="setPreset(70,15,15)">70 / 15 / 15</button>
+                    <button class="btn btn-outline-secondary preset-btn" data-preset="60-20-20" onclick="setPreset(60,20,20)">60 / 20 / 20</button>
+                </div>
+
+                <div class="bg-dark p-3 rounded">
+                    <div class="mb-2">💰 За місяць: <b id="monthlySave" class="text-success"></b></div>
+                    <div>📅 За рік: <b id="yearlySave" class="text-success"></b></div>
+                </div>
             </div>
         </div>
 
-        <div class="field">
-            <label>Накопичення (%)</label>
-            <input type="number" id="savePercent" value="20">
-            <div class="result-line">
-                <span class="result-label">Сума</span>
-                <span class="result-value" id="saveResult"></span>
+        <!-- Рекомендації -->
+        <div class="col-md-12 col-lg-4">
+            <div class="tool-box h-100">
+                <h3><i class="bi bi-info-circle text-info"></i> Рекомендації</h3>
+                <ul class="list-unstyled text-secondary">
+                    <li class="mb-3">
+                        <strong class="text-light">1. Спочатку плати собі</strong><br>
+                        Відкладай гроші одразу після отримання зарплати, а не в кінці місяця.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-light">2. Мінімум 10%</strong><br>
+                        Навіть при маленькій зарплаті намагайся відкладати хоча б 10%.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-light">3. Фінансова подушка</strong><br>
+                        Ціль — накопичити 3–6 місяців витрат.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-light">4. Не лізь у накопичення</strong><br>
+                        Якщо не вистачає — проблема в витратах, а не в “малій зп”.
+                    </li>
+                </ul>
+                <div class="alert alert-dark border-secondary text-info mt-4" role="alert">
+                    <i class="bi bi-lightbulb"></i> <b>Порада:</b><br>
+                    Якщо постійно не вистачає грошей — зменшуй % витрат або збільшуй дохід. Баланс важливіший за “ідеальну формулу”.
+                </div>
             </div>
         </div>
-
-        <div id="totalCheck"></div>
     </div>
-
-    <!-- ПРЕСЕТИ -->
-    <div class="presets">
-        <h3>Варіанти</h3>
-
-        <button class="preset-btn" data-preset="77-7-16" onclick="setPreset(77,7,16)">77 / 7 / 16</button>
-        <button class="preset-btn" data-preset="75-10-15" onclick="setPreset(75,10,15)">75 / 10 / 15</button>
-        <button class="preset-btn" data-preset="70-15-15" onclick="setPreset(70,15,15)">70 / 15 / 15</button>
-        <button class="preset-btn" data-preset="60-20-20" onclick="setPreset(60,20,20)">60 / 20 / 20</button>
-
-        <div class="savings-box">
-            💰 За місяць: <b id="monthlySave"></b><br>
-            📅 За рік: <b id="yearlySave"></b>
-        </div>
-    </div>
-
-    <!-- РЕКОМЕНДАЦІЇ -->
-    <div class="tips">
-        <h3>📊 Рекомендації</h3>
-
-        <p><b>1. Спочатку плати собі</b><br>
-        Відкладай гроші одразу після отримання зарплати, а не в кінці місяця.</p>
-
-        <p><b>2. Мінімум 10%</b><br>
-        Навіть при маленькій зарплаті намагайся відкладати хоча б 10%.</p>
-
-        <p><b>3. Фінансова подушка</b><br>
-        Ціль — накопичити 3–6 місяців витрат.</p>
-
-        <p><b>4. Не лізь у накопичення</b><br>
-        Якщо не вистачає — проблема в витратах, а не в “малій зп”.</p>
-
-        <div class="highlight">
-            💡 <b>Порада:</b><br>
-            Якщо постійно не вистачає грошей — зменшуй % витрат або збільшуй дохід.<br><br>
-            Баланс важливіший за “ідеальну формулу”.
-        </div>
-    </div>
-
 </div>
 
 <script>
-function calculate(){
-    let s=+salary.value||0;
-    let n=+needPercent.value||0;
-    let w=+wantPercent.value||0;
-    let sv=+savePercent.value||0;
+// Load from localStorage
+document.addEventListener("DOMContentLoaded", () => {
+    if(localStorage.getItem('fin_salary')) document.getElementById('salary').value = localStorage.getItem('fin_salary');
+    if(localStorage.getItem('fin_need')) document.getElementById('needPercent').value = localStorage.getItem('fin_need');
+    if(localStorage.getItem('fin_want')) document.getElementById('wantPercent').value = localStorage.getItem('fin_want');
+    if(localStorage.getItem('fin_save')) document.getElementById('savePercent').value = localStorage.getItem('fin_save');
+    calculate();
+});
 
-    let need=s*n/100;
-    let want=s*w/100;
-    let save=s*sv/100;
+function calculate() {
+    let s = +document.getElementById('salary').value || 0;
+    let n = +document.getElementById('needPercent').value || 0;
+    let w = +document.getElementById('wantPercent').value || 0;
+    let sv = +document.getElementById('savePercent').value || 0;
 
-    needResult.innerText=need.toFixed(2)+' грн';
-    wantResult.innerText=want.toFixed(2)+' грн';
-    saveResult.innerText=save.toFixed(2)+' грн';
+    // Save to localStorage
+    localStorage.setItem('fin_salary', s);
+    localStorage.setItem('fin_need', n);
+    localStorage.setItem('fin_want', w);
+    localStorage.setItem('fin_save', sv);
 
-    monthlySave.innerText=save.toFixed(2)+' грн';
-    yearlySave.innerText=(save*12).toFixed(2)+' грн';
+    let need = s * n / 100;
+    let want = s * w / 100;
+    let save = s * sv / 100;
 
-    let t=n+w+sv;
-    totalCheck.innerText=t===100?'✅ 100%':'⚠️ '+t+'%';
-    totalCheck.style.color=t===100?'#66bb6a':'#ef5350';
+    document.getElementById('needResult').innerText = need.toFixed(2) + ' грн';
+    document.getElementById('wantResult').innerText = want.toFixed(2) + ' грн';
+    document.getElementById('saveResult').innerText = save.toFixed(2) + ' грн';
 
-    document.querySelectorAll('.preset-btn').forEach(b=>{
-        b.classList.toggle('active', b.dataset.preset===`${n}-${w}-${sv}`);
+    document.getElementById('monthlySave').innerText = save.toFixed(2) + ' грн';
+    document.getElementById('yearlySave').innerText = (save * 12).toFixed(2) + ' грн';
+
+    let t = n + w + sv;
+    let checkEl = document.getElementById('totalCheck');
+    if(t === 100) {
+        checkEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> 100%';
+        checkEl.className = 'text-center mt-3 fw-bold text-success';
+    } else {
+        checkEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> ' + t + '%';
+        checkEl.className = 'text-center mt-3 fw-bold text-danger';
+    }
+
+    document.querySelectorAll('.preset-btn').forEach(b => {
+        if(b.dataset.preset === `${n}-${w}-${sv}`) {
+            b.classList.remove('btn-outline-secondary');
+            b.classList.add('btn-success');
+        } else {
+            b.classList.add('btn-outline-secondary');
+            b.classList.remove('btn-success');
+        }
     });
 }
 
-function setPreset(n,w,s){
-    needPercent.value=n;
-    wantPercent.value=w;
-    savePercent.value=s;
+function setPreset(n, w, s) {
+    document.getElementById('needPercent').value = n;
+    document.getElementById('wantPercent').value = w;
+    document.getElementById('savePercent').value = s;
     calculate();
 }
 
-document.querySelectorAll('input').forEach(i=>i.oninput=calculate);
-calculate();
+document.querySelectorAll('input[type="number"]').forEach(i => i.oninput = calculate);
 </script>
 
-</body>
-</html>
+<?php require_once 'includes/footer.php'; ?>
