@@ -1,9 +1,9 @@
 <?php
-require_once 'config.php';
+require_once '../config/config.php';
 
 $pageTitle = 'Перевірка пароля';
-require_once 'includes/header.php';
-require_once 'includes/navbar.php';
+require_once '../includes/header.php';
+require_once '../includes/navbar.php';
 
 $result = null;
 
@@ -119,4 +119,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once '../includes/footer.php'; ?>

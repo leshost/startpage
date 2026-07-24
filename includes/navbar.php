@@ -20,24 +20,24 @@ if (isset($_GET['user'])) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/finance.php') ? 'active' : '' ?>" href="/finance.php<?= $userQuery ?>">
+                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/modules/finance.php') ? 'active' : '' ?>" href="/modules/finance.php<?= $userQuery ?>">
                         <i class="bi bi-cash-stack"></i> Калькулятор
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/pass.php') ? 'active' : '' ?>" href="/pass.php<?= $userQuery ?>">
+                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/modules/pass.php') ? 'active' : '' ?>" href="/modules/pass.php<?= $userQuery ?>">
                         <i class="bi bi-key"></i> Генератор паролів
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/check.php') ? 'active' : '' ?>" href="/check.php<?= $userQuery ?>">
+                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/modules/check.php') ? 'active' : '' ?>" href="/modules/check.php<?= $userQuery ?>">
                         <i class="bi bi-shield-check"></i> Перевірка паролів
                     </a>
                 </li>
             </ul>
             <div class="d-flex">
                 <?php if (isLoggedIn()): ?>
-                    <a href="/logout.php" class="btn btn-outline-danger btn-sm">Вийти</a>
+                    <a href="/modules/logout.php" class="btn btn-outline-danger btn-sm">Вийти</a>
                 <?php else: ?>
                     <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#loginModal">
                         <i class="bi bi-gear"></i> Налаштування
@@ -57,7 +57,7 @@ if (isset($_GET['user'])) {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="loginForm" method="POST" action="/login.php">
+                <form id="loginForm" method="POST" action="/modules/login.php">
                     <div class="mb-3">
                         <input type="password" class="form-control" name="password" placeholder="Введіть пароль" required autofocus>
                     </div>

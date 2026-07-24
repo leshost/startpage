@@ -1,9 +1,9 @@
 <?php
-require_once 'config.php';
+require_once '../config/config.php';
 
 $pageTitle = 'Фінансовий калькулятор';
-require_once 'includes/header.php';
-require_once 'includes/navbar.php';
+require_once '../includes/header.php';
+require_once '../includes/navbar.php';
 ?>
 
 <!-- Chart.js -->
@@ -260,4 +260,4 @@ function setPreset(n, w, s) {
 document.querySelectorAll('input[type="number"]').forEach(i => i.oninput = calculate);
 </script>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once '../includes/footer.php'; ?>
