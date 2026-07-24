@@ -1,6 +1,6 @@
 <?php
 require_once '../config/config.php';
 session_destroy();
-$referer = $_SERVER['HTTP_REFERER'] ?? '/';
-header("Location: $referer");
-exit();
+header("Location: ../index.php");
+exit;
+?>

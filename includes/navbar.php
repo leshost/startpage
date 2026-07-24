@@ -1,69 +1,81 @@
 <?php
-$userQuery = '';
-if (isset($_GET['user'])) {
-    $userQuery = '?user=' . urlencode($_GET['user']);
-}
+$current_page = $_SERVER['PHP_SELF'];
+$userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlencode($_SESSION['secret_key']) : '';
 ?>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm border-bottom border-secondary">
+<nav class="navbar navbar-expand-lg navbar-dark startpage-navbar">
     <div class="container-fluid">
-        <a class="navbar-brand text-success fw-bold" href="/<?= $userQuery ?>">
-            <i class="bi bi-rocket-takeoff"></i> Startpage Tools
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <a class="navbar-brand text-light fw-bold" href="/index.php<?= $userQuery ?>"><i class="bi bi-box"></i> Стартова</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/index.php' || $_SERVER['PHP_SELF'] == '/') ? 'active' : '' ?>" href="/<?= $userQuery ?>">
+                    <a class="nav-link <?= ($current_page == '/index.php' || $current_page == '/') ? 'active' : '' ?>" href="/<?= $userQuery ?>">
                         <i class="bi bi-house-door"></i> Головна
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/modules/finance.php') ? 'active' : '' ?>" href="/modules/finance.php<?= $userQuery ?>">
+                    <a class="nav-link <?= ($current_page == '/modules/kanban.php') ? 'active' : '' ?>" href="/modules/kanban.php<?= $userQuery ?>">
+                        <i class="bi bi-kanban"></i> Канбан-дошка
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= ($current_page == '/modules/finance.php') ? 'active' : '' ?>" href="/modules/finance.php<?= $userQuery ?>">
                         <i class="bi bi-cash-stack"></i> Калькулятор
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/modules/pass.php') ? 'active' : '' ?>" href="/modules/pass.php<?= $userQuery ?>">
-                        <i class="bi bi-key"></i> Генератор паролів
+                    <a class="nav-link <?= ($current_page == '/modules/pass.php') ? 'active' : '' ?>" href="/modules/pass.php<?= $userQuery ?>">
+                        <i class="bi bi-key"></i> Генератор
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($_SERVER['PHP_SELF'] == '/modules/check.php') ? 'active' : '' ?>" href="/modules/check.php<?= $userQuery ?>">
-                        <i class="bi bi-shield-check"></i> Перевірка паролів
+                    <a class="nav-link <?= ($current_page == '/modules/check.php') ? 'active' : '' ?>" href="/modules/check.php<?= $userQuery ?>">
+                        <i class="bi bi-shield-check"></i> Перевірка пароля
                     </a>
                 </li>
             </ul>
-            <div class="d-flex">
-                <?php if (isLoggedIn()): ?>
-                    <a href="/modules/logout.php" class="btn btn-outline-danger btn-sm">Вийти</a>
+            <ul class="navbar-nav ms-auto align-items-center">
+                <?php if(isLoggedIn()): ?>
+                    <?php if($current_page == '/index.php' || $current_page == '/'): ?>
+                        <li class="nav-item me-3">
+                            <div class="form-check form-switch m-0 pt-1">
+                                <input class="form-check-input" type="checkbox" role="switch" id="editModeToggle">
+                                <label class="form-check-label text-secondary small" for="editModeToggle"><i class="bi bi-pencil-square"></i> Редагування</label>
+                            </div>
+                        </li>
+                    <?php endif; ?>
+                    <li class="nav-item d-flex align-items-center me-3">
+                        <button class="btn btn-sm btn-outline-info me-2" onclick="copySecretUrl('<?= htmlspecialchars($_SESSION['secret_key']) ?>')" title="Копіювати секретний URL">
+                            <i class="bi bi-link-45deg"></i> Мій URL
+                        </button>
+                        <span class="text-secondary"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($_SESSION['username'] ?? 'Користувач') ?></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="/modules/logout.php"><i class="bi bi-box-arrow-right"></i> Вихід</a>
+                    </li>
                 <?php else: ?>
-                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#loginModal">
-                        <i class="bi bi-gear"></i> Налаштування
-                    </button>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/modules/login.php"><i class="bi bi-box-arrow-in-right"></i> Вхід</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/modules/register.php"><i class="bi bi-person-plus"></i> Реєстрація</a>
+                    </li>
                 <?php endif; ?>
-            </div>
+            </ul>
         </div>
     </div>
 </nav>
 
-<!-- Modal Login -->
-<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="loginModalLabel">Авторизація</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="loginForm" method="POST" action="/modules/login.php">
-                    <div class="mb-3">
-                        <input type="password" class="form-control" name="password" placeholder="Введіть пароль" required autofocus>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Увійти</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+function copySecretUrl(secret) {
+    const url = window.location.origin + '/?user=' + secret;
+    navigator.clipboard.writeText(url).then(() => {
+        if (typeof toastr !== 'undefined') toastr.success('Секретний URL скопійовано!');
+        else alert('Скопійовано: ' + url);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+    });
+}
+</script>

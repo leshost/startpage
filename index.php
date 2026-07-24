@@ -28,11 +28,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
             exit();
         }
 
-        $stmt = $pdo->prepare("INSERT INTO sites (name, url, icon) VALUES (:name, :url, :icon)");
+        $stmt = $pdo->prepare("INSERT INTO sites (name, url, icon, user) VALUES (:name, :url, :icon, :user)");
         if($stmt->execute([
             'name' => trim($_POST['name']),
             'url' => $url,
-            'icon' => trim($_POST['icon'])
+            'icon' => trim($_POST['icon']),
+            'user' => $_SESSION['user_id']
         ])) {
             echo json_encode([
                 'success' => true, 
@@ -50,19 +51,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
 
 }
 
-// Get user filter from URL
-$user_filter = "";
-if(isset($_GET['user'])) {
-    if($_GET['user'] == 'andjey') {
-        $user_filter = " OR `user` = '1'";
-    } elseif($_GET['user'] == 'a10') {
-        $user_filter = " OR `user` = '2'";
-    }
-}
-
 // Fetch Sites
-$query = "SELECT `id`, `name`, `url`, `icon` FROM `sites` WHERE `user` IS NULL " . $user_filter . " ORDER BY `order`";
-$stmt = $pdo->query($query);
+if (isLoggedIn()) {
+    $stmt = $pdo->prepare("SELECT `id`, `name`, `url`, `icon` FROM `sites` WHERE `user` IS NULL OR `user` = ? ORDER BY `order`");
+    $stmt->execute([$_SESSION['user_id']]);
+} else {
+    $stmt = $pdo->query("SELECT `id`, `name`, `url`, `icon` FROM `sites` WHERE `user` IS NULL ORDER BY `order`");
+}
 $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
@@ -83,9 +78,9 @@ require_once 'includes/header.php';
 <div class="container d-flex flex-column justify-content-center align-items-center min-vh-100 content py-5">
     
     <!-- IP and OS Info -->
-    <div class="text-center text-light text-shadow mb-5 mt-3">
-        <h1 class="display-3 fw-bold mb-3"><?= htmlspecialchars($userIp) ?></h1>
-        <p class="fs-4 text-light mb-1">
+    <div class="text-center text-light text-shadow mb-4 mt-2">
+        <h1 class="display-5 fw-bold mb-2"><?= htmlspecialchars($userIp) ?></h1>
+        <p class="fs-5 text-light mb-1">
             <i class="bi bi-browser-chrome text-info"></i> <?= htmlspecialchars($clientInfo['browser']) ?> &nbsp;|&nbsp; 
             <i class="bi bi-display text-warning"></i> <?= htmlspecialchars($clientInfo['os']) ?>
         </p>
@@ -100,7 +95,7 @@ require_once 'includes/header.php';
                     <a href="<?= htmlspecialchars($site['url']) ?>" class="d-block text-decoration-none text-light w-100">
                         <div class="link-box">
                             <?php if (isLoggedIn()): ?>
-                                <button type="button" class="delete-btn" onclick="deleteSite(event, <?= $site['id'] ?>)">
+                                <button type="button" class="delete-btn d-none edit-element" onclick="deleteSite(event, <?= $site['id'] ?>)">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                             <?php endif; ?>
@@ -115,7 +110,7 @@ require_once 'includes/header.php';
 
     <!-- Admin Panel: Add Site -->
     <?php if (isLoggedIn()): ?>
-        <div class="mt-5 p-4 tool-box w-100" style="max-width: 500px;">
+        <div class="mt-5 p-4 tool-box w-100 d-none edit-element" id="adminPanel" style="max-width: 500px;">
             <h4 class="mb-3"><i class="bi bi-plus-circle"></i> Додати сайт</h4>
             <form id="addSiteForm">
                 <div class="mb-3">
@@ -136,6 +131,15 @@ require_once 'includes/header.php';
 
 <script>
 <?php if (isLoggedIn()): ?>
+// Edit Mode Toggle
+document.getElementById('editModeToggle')?.addEventListener('change', function() {
+    const isEdit = this.checked;
+    document.querySelectorAll('.edit-element').forEach(el => {
+        if (isEdit) el.classList.remove('d-none');
+        else el.classList.add('d-none');
+    });
+});
+
 // Delete Site AJAX
 function deleteSite(event, id) {
     event.preventDefault(); // Prevent navigating to the URL
@@ -183,11 +187,15 @@ document.getElementById('addSiteForm')?.addEventListener('submit', function(e) {
             
             // Dynamically append new site to grid
             const container = document.getElementById('sites-container');
+            const toggleElement = document.getElementById('editModeToggle');
+            const isEditMode = toggleElement ? toggleElement.checked : false;
+            const displayClass = isEditMode ? '' : 'd-none';
+            
             const newSiteHTML = `
                 <div class="col-lg-1 col-md-3 col-sm-4 col-4 d-flex flex-column align-items-center position-relative site-item" data-id="${data.id}">
                     <a href="${data.url}" class="d-block text-decoration-none text-light w-100">
                         <div class="link-box">
-                            <button type="button" class="delete-btn" onclick="deleteSite(event, ${data.id})">
+                            <button type="button" class="delete-btn edit-element ${displayClass}" onclick="deleteSite(event, ${data.id})">
                                 <i class="bi bi-x-lg"></i>
                             </button>
                             <img src="${data.icon}" alt="${data.name}">
