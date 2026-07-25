@@ -1,4 +1,8 @@
 <?php
+if (!isLoggedIn()) {
+    header("Location: /?module=login");
+    exit;
+}
 $pageTitle = 'Генератор паролів';
 ?>
 
