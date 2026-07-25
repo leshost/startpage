@@ -20,7 +20,7 @@ const RATE_LIMIT_MAX     = 5;   // максимум невдалих спроб
 const RATE_LIMIT_WINDOW  = 15;  // хвилин — вікно відстеження
 const RATE_LIMIT_LOCKOUT = 15;  // хвилин — блокування
 
-$clientIp = $_SERVER['REMOTE_ADDR'];
+$clientIp = getUserIP();
 
 // Очищаємо записи старіші за добу (профілактика росту таблиці)
 $pdo->prepare("DELETE FROM login_attempts WHERE attempted_at < NOW() - INTERVAL 1 DAY")->execute();

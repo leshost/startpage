@@ -1,9 +1,12 @@
 <?php
 
 function getUserIP() {
-    if (!empty($_SERVER['HTTP_CLIENT_IP'])) return $_SERVER['HTTP_CLIENT_IP'];
-    elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
-    else return $_SERVER['REMOTE_ADDR'];
+    // Оскільки використовується Cloudflare, це єдиний надійний і безпечний заголовок
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        return $_SERVER['HTTP_CF_CONNECTING_IP'];
+    }
+    // Фолбек на фізичний IP
+    return $_SERVER['REMOTE_ADDR'];
 }
 
 function getClientInfo() {
