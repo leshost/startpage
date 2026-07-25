@@ -2,7 +2,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4 text-md-start mb-2 mb-md-0">
-                    <small>&copy; <?= date('Y') ?> Startpage Tools. Версія 2.1.0</small>
+                    <small>&copy; <?= date('Y') ?> Startpage Tools. Версія 2.2.0</small>
                 </div>
                 <div class="col-md-4 mb-2 mb-md-0">
                     <a href="https://github.com/leshost/startpage" target="_blank" class="text-secondary text-decoration-none">
