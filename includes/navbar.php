@@ -53,7 +53,7 @@ if (isLoggedIn() && isset($pdo)) {
                 
                 <!-- Паролі -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?= in_array($current_module, ['pass', 'check']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle <?= in_array($current_module, ['pass', 'check', 'secret']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-shield-lock"></i> Безпека
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark shadow">
@@ -65,6 +65,12 @@ if (isLoggedIn() && isset($pdo)) {
                         <li>
                             <a class="dropdown-item <?= ($current_module == 'check') ? 'active' : '' ?>" href="/?module=check">
                                 <i class="bi bi-shield-check"></i> Перевірка паролів
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider border-secondary"></li>
+                        <li>
+                            <a class="dropdown-item <?= ($current_module == 'secret') ? 'active' : '' ?>" href="/?module=secret">
+                                <i class="bi bi-envelope-x"></i> Секретне повідомлення
                             </a>
                         </li>
                     </ul>

@@ -59,6 +59,24 @@ try {
 
 try { $pdo->exec("ALTER TABLE `notes` MODIFY COLUMN `title` TEXT NOT NULL"); } catch (PDOException $e) {}
 
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `secrets` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `code` VARCHAR(32) NOT NULL UNIQUE,
+            `encrypted_title` TEXT NOT NULL,
+            `encrypted_content` TEXT NOT NULL,
+            `has_password` BOOLEAN DEFAULT FALSE,
+            `do_not_delete` BOOLEAN DEFAULT FALSE,
+            `is_unencrypted` BOOLEAN DEFAULT FALSE,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+} catch (PDOException $e) {}
+
+try { $pdo->exec("ALTER TABLE `secrets` ADD COLUMN `do_not_delete` BOOLEAN DEFAULT FALSE"); } catch (PDOException $e) {}
+try { $pdo->exec("ALTER TABLE `secrets` ADD COLUMN `is_unencrypted` BOOLEAN DEFAULT FALSE"); } catch (PDOException $e) {}
+
 // ── Обробка форми ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
