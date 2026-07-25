@@ -39,9 +39,17 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `kanban_shares` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+$pdo->exec("CREATE TABLE IF NOT EXISTS `task_views` (
+    `task_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `viewed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`task_id`, `user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
 try { $pdo->exec("ALTER TABLE `tasks` ADD COLUMN `created_by` INT DEFAULT NULL AFTER `project_id`"); } catch (PDOException $e) {}
 try { $pdo->exec("ALTER TABLE `tasks` ADD COLUMN `updated_by` INT DEFAULT NULL AFTER `created_by`"); } catch (PDOException $e) {}
 try { $pdo->exec("ALTER TABLE `tasks` ADD COLUMN `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP AFTER `updated_by`"); } catch (PDOException $e) {}
+try { $pdo->exec("ALTER TABLE `tasks` ADD COLUMN `is_deleted` BOOLEAN DEFAULT 0 AFTER `updated_at`"); } catch (PDOException $e) {}
 
 // AJAX Handler
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -117,6 +125,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
+    if ($action === 'edit_task') {
+        $id = (int)($_POST['id'] ?? 0);
+        $title = trim($_POST['title'] ?? '');
+        if (!$title) { echo json_encode(['success' => false, 'message' => 'Пуста назва']); exit; }
+
+        // Validate access
+        $stmt = $pdo->prepare("SELECT t.project_id, t.user_id FROM tasks t WHERE t.id = ?");
+        $stmt->execute([$id]);
+        $task = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        $hasAccess = false;
+        if ($task) {
+            if ($task['user_id'] == $_SESSION['user_id']) $hasAccess = true;
+            elseif ($task['project_id']) {
+                $stmt = $pdo->prepare("SELECT 1 FROM kanban_shares WHERE project_id = ? AND user_id = ?");
+                $stmt->execute([$task['project_id'], $_SESSION['user_id']]);
+                if ($stmt->fetchColumn()) $hasAccess = true;
+            }
+        }
+        
+        if ($hasAccess) {
+            $stmt = $pdo->prepare("UPDATE tasks SET title = ?, updated_by = ? WHERE id = ?");
+            $success = $stmt->execute([$title, $_SESSION['user_id'], $id]);
+            
+            $stmt = $pdo->prepare("SELECT u.username, DATE_FORMAT(t.updated_at, '%H:%i') as up_time FROM tasks t JOIN users u ON t.updated_by = u.id WHERE t.id = ?");
+            $stmt->execute([$id]);
+            $meta = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            echo json_encode(['success' => $success, 'title' => htmlspecialchars($title), 'updated_by_name' => $meta['username'], 'updated_at' => $meta['up_time']]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Недостатньо прав']);
+        }
+        exit;
+    }
+
     if ($action === 'update_status') {
         $id = (int)($_POST['id'] ?? 0);
         $status = $_POST['status'] ?? 'todo';
@@ -170,8 +213,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         
         if ($hasAccess) {
-            $stmt = $pdo->prepare("DELETE FROM tasks WHERE id = ?");
-            echo json_encode(['success' => $stmt->execute([$id])]);
+            $stmt = $pdo->prepare("UPDATE tasks SET is_deleted = 1, updated_by = ? WHERE id = ?");
+            echo json_encode(['success' => $stmt->execute([$_SESSION['user_id'], $id])]);
         } else {
             echo json_encode(['success' => false]);
         }
@@ -253,6 +296,15 @@ if ($active_project_id) {
     if (!$found) $active_project_id = null;
 }
 
+// Register views
+if ($active_project_id) {
+    $stmt = $pdo->prepare("INSERT INTO task_views (task_id, user_id, viewed_at) SELECT id, ?, NOW() FROM tasks WHERE project_id = ? AND IFNULL(is_deleted, 0) = 0 ON DUPLICATE KEY UPDATE viewed_at = NOW()");
+    $stmt->execute([$_SESSION['user_id'], $active_project_id]);
+} else {
+    $stmt = $pdo->prepare("INSERT INTO task_views (task_id, user_id, viewed_at) SELECT id, ?, NOW() FROM tasks WHERE project_id IS NULL AND user_id = ? AND IFNULL(is_deleted, 0) = 0 ON DUPLICATE KEY UPDATE viewed_at = NOW()");
+    $stmt->execute([$_SESSION['user_id'], $_SESSION['user_id']]);
+}
+
 // Task Counts per project
 $stmt = $pdo->prepare("
     SELECT t.project_id, COUNT(t.id) as count 
@@ -260,6 +312,7 @@ $stmt = $pdo->prepare("
     LEFT JOIN kanban_projects p ON t.project_id = p.id
     LEFT JOIN kanban_shares s ON p.id = s.project_id
     WHERE (t.user_id = ? OR p.user_id = ? OR s.user_id = ?) 
+      AND IFNULL(t.is_deleted, 0) = 0
     GROUP BY t.project_id
 ");
 $stmt->execute([$_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id']]);
@@ -271,21 +324,27 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 // Fetch tasks for active project
 if ($active_project_id) {
     $stmt = $pdo->prepare("
-        SELECT t.*, c.username as created_by_name, u.username as updated_by_name, DATE_FORMAT(t.updated_at, '%H:%i') as up_time 
+        SELECT t.*, c.username as created_by_name, u.username as updated_by_name, DATE_FORMAT(t.updated_at, '%H:%i') as up_time,
+               (SELECT GROUP_CONCAT(CONCAT(vu.username, ' (', DATE_FORMAT(tv.viewed_at, '%H:%i'), ')') SEPARATOR ', ') 
+                FROM task_views tv JOIN users vu ON tv.user_id = vu.id 
+                WHERE tv.task_id = t.id AND tv.user_id != t.created_by) as viewed_by_list
         FROM tasks t 
         LEFT JOIN users c ON t.created_by = c.id
         LEFT JOIN users u ON t.updated_by = u.id
-        WHERE t.project_id = ? 
+        WHERE t.project_id = ? AND IFNULL(t.is_deleted, 0) = 0
         ORDER BY t.id ASC
     ");
     $stmt->execute([$active_project_id]);
 } else {
     $stmt = $pdo->prepare("
-        SELECT t.*, c.username as created_by_name, u.username as updated_by_name, DATE_FORMAT(t.updated_at, '%H:%i') as up_time 
+        SELECT t.*, c.username as created_by_name, u.username as updated_by_name, DATE_FORMAT(t.updated_at, '%H:%i') as up_time,
+               (SELECT GROUP_CONCAT(CONCAT(vu.username, ' (', DATE_FORMAT(tv.viewed_at, '%H:%i'), ')') SEPARATOR ', ') 
+                FROM task_views tv JOIN users vu ON tv.user_id = vu.id 
+                WHERE tv.task_id = t.id AND tv.user_id != t.created_by) as viewed_by_list
         FROM tasks t 
         LEFT JOIN users c ON t.created_by = c.id
         LEFT JOIN users u ON t.updated_by = u.id
-        WHERE t.user_id = ? AND t.project_id IS NULL 
+        WHERE t.user_id = ? AND t.project_id IS NULL AND IFNULL(t.is_deleted, 0) = 0
         ORDER BY t.id ASC
     ");
     $stmt->execute([$_SESSION['user_id']]);
@@ -343,15 +402,16 @@ $pageTitle = 'Канбан-дошка';
     word-break: break-word;
     color: #e9ecef;
 }
-.btn-delete-task {
-    color: #dc3545;
+.btn-delete-task, .btn-edit-task {
     background: none;
     border: none;
     padding: 0 0 0 10px;
     opacity: 0.5;
     transition: opacity 0.2s;
 }
-.btn-delete-task:hover {
+.btn-delete-task { color: #dc3545; }
+.btn-edit-task { color: #0dcaf0; }
+.btn-delete-task:hover, .btn-edit-task:hover {
     opacity: 1;
 }
 .sortable-ghost {
@@ -424,12 +484,18 @@ $pageTitle = 'Канбан-дошка';
                     <div class="kanban-card flex-column align-items-start" data-id="<?= $t['id'] ?>">
                         <div class="d-flex w-100 justify-content-between align-items-center">
                             <span class="kanban-card-text"><?= htmlspecialchars($t['title']) ?></span>
-                            <button class="btn-delete-task" onclick="deleteTask(this, <?= $t['id'] ?>)"><i class="bi bi-trash"></i></button>
+                            <div class="d-flex text-nowrap ms-2">
+                                <button class="btn-edit-task" onclick="editTask(this, <?= $t['id'] ?>)" title="Редагувати"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-delete-task" onclick="deleteTask(this, <?= $t['id'] ?>)" title="Видалити"><i class="bi bi-trash"></i></button>
+                            </div>
                         </div>
                         <div class="task-meta w-100 text-muted mt-2" style="font-size: 0.75rem;">
                             Створив: <?= htmlspecialchars($t['created_by_name'] ?? 'Невідомо') ?>
                             <?php if ($t['updated_by_name']): ?>
                                 | Змінив: <?= htmlspecialchars($t['updated_by_name']) ?> о <?= htmlspecialchars($t['up_time']) ?>
+                            <?php endif; ?>
+                            <?php if (!empty($t['viewed_by_list'])): ?>
+                                <div class="mt-1 text-info"><i class="bi bi-check-all"></i> Переглянули: <?= htmlspecialchars($t['viewed_by_list']) ?></div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -448,12 +514,18 @@ $pageTitle = 'Канбан-дошка';
                     <div class="kanban-card flex-column align-items-start" data-id="<?= $t['id'] ?>">
                         <div class="d-flex w-100 justify-content-between align-items-center">
                             <span class="kanban-card-text"><?= htmlspecialchars($t['title']) ?></span>
-                            <button class="btn-delete-task" onclick="deleteTask(this, <?= $t['id'] ?>)"><i class="bi bi-trash"></i></button>
+                            <div class="d-flex text-nowrap ms-2">
+                                <button class="btn-edit-task" onclick="editTask(this, <?= $t['id'] ?>)" title="Редагувати"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-delete-task" onclick="deleteTask(this, <?= $t['id'] ?>)" title="Видалити"><i class="bi bi-trash"></i></button>
+                            </div>
                         </div>
                         <div class="task-meta w-100 text-muted mt-2" style="font-size: 0.75rem;">
                             Створив: <?= htmlspecialchars($t['created_by_name'] ?? 'Невідомо') ?>
                             <?php if ($t['updated_by_name']): ?>
                                 | Змінив: <?= htmlspecialchars($t['updated_by_name']) ?> о <?= htmlspecialchars($t['up_time']) ?>
+                            <?php endif; ?>
+                            <?php if (!empty($t['viewed_by_list'])): ?>
+                                <div class="mt-1 text-info"><i class="bi bi-check-all"></i> Переглянули: <?= htmlspecialchars($t['viewed_by_list']) ?></div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -472,12 +544,18 @@ $pageTitle = 'Канбан-дошка';
                     <div class="kanban-card flex-column align-items-start" data-id="<?= $t['id'] ?>" style="opacity: 0.7;">
                         <div class="d-flex w-100 justify-content-between align-items-center">
                             <span class="kanban-card-text text-decoration-line-through"><?= htmlspecialchars($t['title']) ?></span>
-                            <button class="btn-delete-task" onclick="deleteTask(this, <?= $t['id'] ?>)"><i class="bi bi-trash"></i></button>
+                            <div class="d-flex text-nowrap ms-2">
+                                <button class="btn-edit-task" onclick="editTask(this, <?= $t['id'] ?>)" title="Редагувати"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-delete-task" onclick="deleteTask(this, <?= $t['id'] ?>)" title="Видалити"><i class="bi bi-trash"></i></button>
+                            </div>
                         </div>
                         <div class="task-meta w-100 text-muted mt-2" style="font-size: 0.75rem;">
                             Створив: <?= htmlspecialchars($t['created_by_name'] ?? 'Невідомо') ?>
                             <?php if ($t['updated_by_name']): ?>
                                 | Змінив: <?= htmlspecialchars($t['updated_by_name']) ?> о <?= htmlspecialchars($t['up_time']) ?>
+                            <?php endif; ?>
+                            <?php if (!empty($t['viewed_by_list'])): ?>
+                                <div class="mt-1 text-info"><i class="bi bi-check-all"></i> Переглянули: <?= htmlspecialchars($t['viewed_by_list']) ?></div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -686,6 +764,54 @@ window.deleteTask = function(btn, id) {
                 toastr.success('Завдання видалено');
             } else {
                 toastr.error('Помилка видалення');
+            }
+        })
+        .catch(() => toastr.error('Мережева помилка'));
+}
+
+// AJAX: Edit Task
+window.editTask = function(btn, id) {
+    const card = btn.closest('.kanban-card');
+    const textEl = card.querySelector('.kanban-card-text');
+    const oldTitle = textEl.innerText;
+    
+    const newTitle = prompt('Редагувати завдання:', oldTitle);
+    if (newTitle === null) return;
+    
+    const title = newTitle.trim();
+    if (!title) {
+        toastr.error('Назва не може бути порожньою');
+        return;
+    }
+    if (title === oldTitle) return;
+
+    const fd = new FormData();
+    fd.append('action', 'edit_task');
+    fd.append('id', id);
+    fd.append('title', title);
+
+    fetch(window.location.href, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                textEl.innerText = d.title;
+                toastr.success('Завдання оновлено');
+                
+                // Update meta text in the UI
+                if (d.updated_by_name) {
+                    let metaEl = card.querySelector('.task-meta');
+                    if (metaEl) {
+                        let text = metaEl.innerHTML;
+                        if (text.includes('| Змінив:')) {
+                            text = text.replace(/\| Змінив:.*$/, `| Змінив: ${d.updated_by_name} о ${d.updated_at}`);
+                        } else {
+                            text += ` | Змінив: ${d.updated_by_name} о ${d.updated_at}`;
+                        }
+                        metaEl.innerHTML = text;
+                    }
+                }
+            } else {
+                toastr.error(d.message || 'Помилка оновлення');
             }
         })
         .catch(() => toastr.error('Мережева помилка'));
