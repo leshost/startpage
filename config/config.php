@@ -1,4 +1,13 @@
 <?php
+// Жорсткі налаштування безпеки для сесійних Cookie
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => $_SERVER['HTTP_HOST'] ?? '',
+    'secure' => true,         // Тільки через HTTPS
+    'httponly' => true,       // Заборона доступу через JS (захист від XSS)
+    'samesite' => 'Strict'    // Захист від міжсайтових атак (CSRF)
+]);
 session_start();
 
 // CSRF Token — генеруємо один раз за сесію
