@@ -4,6 +4,32 @@ if (!isLoggedIn()) {
     exit;
 }
 
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `friends` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT NOT NULL,
+            `friend_id` INT NOT NULL,
+            `status` ENUM('pending', 'accepted') NOT NULL DEFAULT 'pending',
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`friend_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+        CREATE TABLE IF NOT EXISTS `messages` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `sender_id` INT NOT NULL,
+            `receiver_id` INT NOT NULL,
+            `encrypted_content` TEXT NOT NULL,
+            `encrypted_for_sender` TEXT NOT NULL,
+            `is_read` BOOLEAN DEFAULT FALSE,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+} catch (PDOException $e) {}
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 // Обробка AJAX-запитів

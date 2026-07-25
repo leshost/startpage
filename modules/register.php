@@ -8,6 +8,26 @@ if (isLoggedIn()) {
 $error = '';
 $success = '';
 
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `users` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `username` VARCHAR(255) NOT NULL UNIQUE,
+            `password_hash` VARCHAR(255) NOT NULL,
+            `secret_key` VARCHAR(64) NOT NULL UNIQUE,
+            `is_admin` BOOLEAN DEFAULT FALSE,
+            `is_blocked` BOOLEAN DEFAULT FALSE,
+            `public_key` TEXT NULL,
+            `private_key` TEXT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_admin` BOOLEAN DEFAULT FALSE");
+} catch (PDOException $e) {}
+try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_blocked` BOOLEAN DEFAULT FALSE"); } catch (PDOException $e) {}
+try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `public_key` TEXT NULL"); } catch (PDOException $e) {}
+try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `private_key` TEXT NULL"); } catch (PDOException $e) {}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
