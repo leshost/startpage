@@ -8,6 +8,7 @@ if (isLoggedIn()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCsrf();
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -47,6 +48,7 @@ $pageTitle = 'Вхід';
         <?php endif; ?>
 
         <form method="post">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
             <div class="mb-3">
                 <label class="form-label text-light">Логін</label>
                 <input type="text" name="username" class="form-control bg-dark text-light border-secondary" required value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">

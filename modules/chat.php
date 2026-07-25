@@ -32,12 +32,24 @@ try {
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+// Дії, що змінюють стан даних — потребують CSRF-захисту
+$csrfRequiredActions = [
+    'init_keys', 'save_private_key', 'force_save_private_key', 'delete_private_key',
+    'send_friend_request', 'accept_friend_request', 'reject_friend_request',
+    'send_message', 'mark_as_read',
+];
+
 // Обробка AJAX-запитів
 if ($action) {
     header('Content-Type: application/json');
     $raw_data = file_get_contents('php://input');
     $data = json_decode($raw_data, true);
     if (!$data) $data = $_POST;
+
+    // Перевіряємо CSRF тільки для записуючих (state-changing) POST-дій
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, $csrfRequiredActions, true)) {
+        verifyCsrf();
+    }
 
     $myId = $_SESSION['user_id'];
 

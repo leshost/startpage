@@ -29,6 +29,7 @@ try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `public_key` TEXT NULL"); } cat
 try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `private_key` TEXT NULL"); } catch (PDOException $e) {}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCsrf();
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
@@ -76,6 +77,7 @@ $pageTitle = 'Реєстрація';
             <div class="alert alert-success"><?= $success ?></div>
         <?php else: ?>
             <form method="post">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <div class="mb-3">
                     <label class="form-label text-light">Логін</label>
                     <input type="text" name="username" class="form-control bg-dark text-light border-secondary" required value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">

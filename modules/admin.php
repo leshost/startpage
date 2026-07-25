@@ -6,6 +6,7 @@ if (!isLoggedIn() || empty($_SESSION['is_admin'])) {
 
 // Обробка AJAX запитів
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
+    verifyCsrf();
     // Управління користувачами
     if ($_POST['action'] === 'toggle_block' && isset($_POST['user_id'])) {
         $userId = (int)$_POST['user_id'];

@@ -24,5 +24,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <!-- Custom JS -->
     <script src="/assets/js/app.js"></script>
+
+    <!-- CSRF: глобальний fetch-перехоплювач -->
+    <!-- Автоматично додає X-CSRF-Token до всіх не-GET запитів, що робляться через fetch() -->
+    <script>
+    (function () {
+        var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || '';
+        var _fetch = window.fetch;
+        window.fetch = function (url, options) {
+            options = options || {};
+            var method = (options.method || 'GET').toUpperCase();
+            if (method !== 'GET' && method !== 'HEAD') {
+                options.headers = Object.assign({ 'X-CSRF-Token': csrfToken }, options.headers || {});
+            }
+            return _fetch.call(this, url, options);
+        };
+    })();
+    </script>
 </body>
 </html>

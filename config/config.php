@@ -1,6 +1,38 @@
 <?php
 session_start();
 
+// CSRF Token — генеруємо один раз за сесію
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+/**
+ * Перевіряє CSRF-токен.
+ * Підтримує два способи передачі:
+ *   1. POST-поле csrf_token (для HTML-форм)
+ *   2. HTTP-заголовок X-CSRF-Token (для AJAX fetch)
+ */
+function verifyCsrf(): void {
+    $expected = $_SESSION['csrf_token'] ?? '';
+    $received  = $_POST['csrf_token']
+              ?? $_SERVER['HTTP_X_CSRF_TOKEN']
+              ?? '';
+
+    if (!$expected || !hash_equals($expected, $received)) {
+        http_response_code(403);
+        // Якщо це AJAX-запит — відповідаємо JSON
+        $isAjax = !empty($_SERVER['HTTP_X_CSRF_TOKEN'])
+               || (($_SERVER['CONTENT_TYPE'] ?? '') === 'application/json');
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'CSRF-перевірка не пройдена. Оновіть сторінку.']);
+        } else {
+            echo '<div style="font-family:sans-serif;padding:2rem;"><h2>403 — CSRF-помилка</h2><p>Недійсний або відсутній токен безпеки. <a href="/">Повернутися</a></p></div>';
+        }
+        exit;
+    }
+}
+
 // Конфігурація БД
 /* 
  * Для безпеки паролі бази даних винесені у файл .env, який лежить за межами публічної директорії.

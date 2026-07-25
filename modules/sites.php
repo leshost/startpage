@@ -83,6 +83,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         echo json_encode(['success' => false, 'message' => 'Несанкціонований доступ']);
         exit();
     }
+    verifyCsrf();
     
     // Delete Site
     if ($_POST['action'] === 'delete' && isset($_POST['id'])) {

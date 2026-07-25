@@ -54,6 +54,7 @@ try { $pdo->exec("ALTER TABLE `tasks` ADD COLUMN `is_deleted` BOOLEAN DEFAULT 0 
 // AJAX Handler
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
+    verifyCsrf();
     $action = $_POST['action'];
 
     if ($action === 'add') {
