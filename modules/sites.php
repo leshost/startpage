@@ -7,6 +7,10 @@ try {
             `username` VARCHAR(255) NOT NULL UNIQUE,
             `password_hash` VARCHAR(255) NOT NULL,
             `secret_key` VARCHAR(64) NOT NULL UNIQUE,
+            `is_admin` BOOLEAN DEFAULT FALSE,
+            `is_blocked` BOOLEAN DEFAULT FALSE,
+            `public_key` TEXT NULL,
+            `private_key` TEXT NULL,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         
@@ -29,7 +33,46 @@ try {
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        CREATE TABLE IF NOT EXISTS `friends` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT NOT NULL,
+            `friend_id` INT NOT NULL,
+            `status` ENUM('pending', 'accepted') NOT NULL DEFAULT 'pending',
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`friend_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+        CREATE TABLE IF NOT EXISTS `messages` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `sender_id` INT NOT NULL,
+            `receiver_id` INT NOT NULL,
+            `encrypted_content` TEXT NOT NULL,
+            `encrypted_for_sender` TEXT NOT NULL,
+            `is_read` BOOLEAN DEFAULT FALSE,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
+
+    // Міграції для додавання нових колонок
+    try {
+        $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_admin` BOOLEAN DEFAULT FALSE");
+    } catch (PDOException $e) {}
+    try {
+        $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_blocked` BOOLEAN DEFAULT FALSE");
+    } catch (PDOException $e) {}
+    try {
+        $pdo->exec("ALTER TABLE `users` ADD COLUMN `public_key` TEXT NULL");
+    } catch (PDOException $e) {}
+    try {
+        $pdo->exec("ALTER TABLE `users` ADD COLUMN `private_key` TEXT NULL");
+    } catch (PDOException $e) {}
+    
+    // Робимо першого користувача адміністратором, якщо він існує
+    $pdo->exec("UPDATE `users` SET `is_admin` = TRUE ORDER BY `id` ASC LIMIT 1");
+
 } catch (PDOException $e) {
     die("Помилка автоматичного створення таблиць: " . $e->getMessage());
 }

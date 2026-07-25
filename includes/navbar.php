@@ -1,6 +1,15 @@
 <?php
 $current_module = $_GET['module'] ?? 'sites';
 $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '&user=' . urlencode($_SESSION['secret_key']) : '';
+
+$unreadTotal = 0;
+if (isLoggedIn() && isset($pdo)) {
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = 0");
+        $stmt->execute([$_SESSION['user_id']]);
+        $unreadTotal = $stmt->fetchColumn();
+    } catch (PDOException $e) {}
+}
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark startpage-navbar">
     <div class="container-fluid">
@@ -89,12 +98,25 @@ $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '&user=' . urlen
                             </div>
                         </li>
                     <?php endif; ?>
-                    <li class="nav-item d-flex align-items-center me-3">
-                        <button class="btn btn-sm btn-outline-info me-2" onclick="copySecretUrl('<?= htmlspecialchars($_SESSION['secret_key']) ?>')" title="Копіювати секретний URL">
+                    <li class="nav-item d-flex align-items-center me-3 ms-3">
+                        <button class="btn btn-sm btn-outline-info me-3" onclick="copySecretUrl('<?= htmlspecialchars($_SESSION['secret_key']) ?>')" title="Копіювати секретний URL">
                             <i class="bi bi-link-45deg"></i> Мій URL
                         </button>
-                        <span class="text-secondary"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($_SESSION['username'] ?? 'Користувач') ?></span>
+                        <a href="/?module=chat<?= $userQuery ?>" class="text-secondary text-decoration-none d-flex align-items-center position-relative">
+                            <i class="bi bi-person-circle fs-5 me-2"></i>
+                            <span><?= htmlspecialchars($_SESSION['username'] ?? 'Користувач') ?></span>
+                            <?php if ($unreadTotal > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                    <?= $unreadTotal ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
                     </li>
+                    <?php if(!empty($_SESSION['is_admin'])): ?>
+                        <li class="nav-item me-2">
+                            <a class="nav-link <?= ($current_module == 'admin') ? 'active' : '' ?>" href="/?module=admin"><i class="bi bi-shield-lock"></i> Адмін Панель</a>
+                        </li>
+                    <?php endif; ?>
                     <li class="nav-item">
                         <a class="nav-link text-danger" href="/?module=logout"><i class="bi bi-box-arrow-right"></i> Вихід</a>
                     </li>

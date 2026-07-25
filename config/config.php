@@ -32,13 +32,14 @@ try {
 // Auto-login via Secret URL Parameter
 if (isset($_GET['user']) && !empty($_GET['user'])) {
     $secret = trim($_GET['user']);
-    $stmt = $pdo->prepare("SELECT id, username FROM users WHERE secret_key = ?");
+    $stmt = $pdo->prepare("SELECT id, username, is_admin, is_blocked FROM users WHERE secret_key = ?");
     $stmt->execute([$secret]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($user) {
+    if ($user && !$user['is_blocked']) {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['secret_key'] = $secret;
+        $_SESSION['is_admin'] = (bool)$user['is_admin'];
     }
 }
 
