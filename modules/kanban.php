@@ -1,8 +1,7 @@
 <?php
-require_once '../config/config.php';
 
 if (!isLoggedIn()) {
-    header("Location: login.php");
+    header("Location: /?module=login");
     exit;
 }
 
@@ -74,8 +73,6 @@ foreach ($tasks as $task) {
 }
 
 $pageTitle = 'Канбан-дошка';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <!-- SortableJS -->
@@ -257,7 +254,7 @@ function updateTaskStatus(id, status) {
     fd.append('id', id);
     fd.append('status', status);
 
-    fetch('kanban.php', { method: 'POST', body: fd })
+    fetch(window.location.href, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
             if (!d.success) toastr.error('Помилка збереження статусу');
@@ -276,7 +273,7 @@ document.getElementById('addTaskForm').addEventListener('submit', function(e) {
     fd.append('action', 'add');
     fd.append('title', title);
 
-    fetch('kanban.php', { method: 'POST', body: fd })
+    fetch(window.location.href, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
@@ -309,7 +306,7 @@ window.deleteTask = function(btn, id) {
     fd.append('action', 'delete');
     fd.append('id', id);
 
-    fetch('kanban.php', { method: 'POST', body: fd })
+    fetch(window.location.href, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
@@ -322,4 +319,3 @@ window.deleteTask = function(btn, id) {
 }
 </script>
 
-<?php require_once '../includes/footer.php'; ?>

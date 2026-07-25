@@ -1,8 +1,7 @@
 <?php
-require_once '../config/config.php';
 
 if (isLoggedIn()) {
-    header("Location: ../index.php");
+    header("Location: /");
     exit;
 }
 
@@ -34,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $secret_key = bin2hex(random_bytes(16));
             $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, secret_key) VALUES (?, ?, ?)");
             if ($stmt->execute([$username, $hash, $secret_key])) {
-                $success = 'Реєстрація успішна! Тепер ви можете <a href="login.php" class="alert-link">увійти</a>.';
+                $success = 'Реєстрація успішна! Тепер ви можете <a href="/?module=login" class="alert-link">увійти</a>.';
             } else {
                 $error = 'Помилка бази даних під час реєстрації.';
             }
@@ -43,8 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Реєстрація';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <div class="container py-5 d-flex justify-content-center">
@@ -75,7 +72,7 @@ require_once '../includes/navbar.php';
                 <button type="submit" id="regSubmitBtn" class="btn btn-primary w-100">Зареєструватися</button>
             </form>
             <div class="text-center mt-3">
-                <small class="text-secondary">Вже є акаунт? <a href="login.php" class="text-info text-decoration-none">Увійти</a></small>
+                <small class="text-secondary">Вже є акаунт? <a href="/?module=login" class="text-info text-decoration-none">Увійти</a></small>
             </div>
         <?php endif; ?>
     </div>
@@ -167,4 +164,3 @@ if (passwordInput && confirmInput) {
 }
 </script>
 
-<?php require_once '../includes/footer.php'; ?>

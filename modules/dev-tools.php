@@ -1,9 +1,5 @@
 <?php
-require_once '../config/config.php';
-
 $pageTitle = 'Dev Multi-Tool';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <div class="container-fluid py-4 px-lg-5">
@@ -223,4 +219,3 @@ require_once '../includes/navbar.php';
 
 </script>
 
-<?php require_once '../includes/footer.php'; ?>

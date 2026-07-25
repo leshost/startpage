@@ -1,9 +1,5 @@
 <?php
-require_once '../config/config.php';
-
 $pageTitle = 'Форматер JSON';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <!-- Highlight.js CSS -->
@@ -142,4 +138,3 @@ require_once '../includes/navbar.php';
 
 </script>
 
-<?php require_once '../includes/footer.php'; ?>

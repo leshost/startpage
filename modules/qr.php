@@ -1,9 +1,5 @@
 <?php
-require_once '../config/config.php';
-
 $pageTitle = 'Генератор QR-кодів';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <div class="container py-5">
@@ -220,4 +216,3 @@ generateQR();
 
 </script>
 
-<?php require_once '../includes/footer.php'; ?>

@@ -1,9 +1,5 @@
 <?php
-require_once '../config/config.php';
-
 $pageTitle = 'Перевірка пароля';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <div class="container py-5 d-flex justify-content-center">
@@ -159,5 +155,3 @@ document.getElementById('checkForm').addEventListener('submit', async function(e
     }
 });
 </script>
-
-<?php require_once '../includes/footer.php'; ?>

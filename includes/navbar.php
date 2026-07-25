@@ -1,10 +1,10 @@
 <?php
-$current_page = $_SERVER['PHP_SELF'];
-$userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlencode($_SESSION['secret_key']) : '';
+$current_module = $_GET['module'] ?? 'sites';
+$userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '&user=' . urlencode($_SESSION['secret_key']) : '';
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark startpage-navbar">
     <div class="container-fluid">
-        <a class="navbar-brand text-light fw-bold" href="/index.php<?= $userQuery ?>"><i class="bi bi-box"></i> Стартова</a>
+        <a class="navbar-brand text-light fw-bold" href="/?module=sites<?= $userQuery ?>"><i class="bi bi-box"></i> Стартова</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -12,24 +12,24 @@ $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlen
             <ul class="navbar-nav me-auto">
                 <!-- Головна -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == '/index.php' || $current_page == '/') ? 'active' : '' ?>" href="/<?= $userQuery ?>">
+                    <a class="nav-link <?= ($current_module == 'sites') ? 'active' : '' ?>" href="/?module=sites<?= $userQuery ?>">
                         <i class="bi bi-house-door"></i> Головна
                     </a>
                 </li>
                 
                 <!-- Фінанси -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?= in_array($current_page, ['/modules/kanban.php', '/modules/finance.php']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle <?= in_array($current_module, ['kanban', 'finance']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-briefcase"></i> Продуктивність
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark shadow">
                         <li>
-                            <a class="dropdown-item <?= ($current_page == '/modules/kanban.php') ? 'active' : '' ?>" href="/modules/kanban.php<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'kanban') ? 'active' : '' ?>" href="/?module=kanban<?= $userQuery ?>">
                                 <i class="bi bi-kanban"></i> Канбан-дошка
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?= ($current_page == '/modules/finance.php') ? 'active' : '' ?>" href="/modules/finance.php<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'finance') ? 'active' : '' ?>" href="/?module=finance<?= $userQuery ?>">
                                 <i class="bi bi-cash-stack"></i> Калькулятор фінансів
                             </a>
                         </li>
@@ -38,17 +38,17 @@ $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlen
                 
                 <!-- Паролі -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?= in_array($current_page, ['/modules/pass.php', '/modules/check.php']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle <?= in_array($current_module, ['pass', 'check']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-shield-lock"></i> Безпека
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark shadow">
                         <li>
-                            <a class="dropdown-item <?= ($current_page == '/modules/pass.php') ? 'active' : '' ?>" href="/modules/pass.php<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'pass') ? 'active' : '' ?>" href="/?module=pass<?= $userQuery ?>">
                                 <i class="bi bi-key"></i> Генератор паролів
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?= ($current_page == '/modules/check.php') ? 'active' : '' ?>" href="/modules/check.php<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'check') ? 'active' : '' ?>" href="/?module=check<?= $userQuery ?>">
                                 <i class="bi bi-shield-check"></i> Перевірка паролів
                             </a>
                         </li>
@@ -57,22 +57,22 @@ $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlen
 
                 <!-- Інструменти -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?= in_array($current_page, ['/modules/qr.php', '/modules/json.php']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle <?= in_array($current_module, ['qr', 'json', 'dev-tools']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-tools"></i> Інструменти
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark shadow">
                         <li>
-                            <a class="dropdown-item <?= ($current_page == '/modules/qr.php') ? 'active' : '' ?>" href="/modules/qr.php<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'qr') ? 'active' : '' ?>" href="/?module=qr<?= $userQuery ?>">
                                 <i class="bi bi-qr-code"></i> Генератор QR
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?= ($current_page == '/modules/json.php') ? 'active' : '' ?>" href="/modules/json.php<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'json') ? 'active' : '' ?>" href="/?module=json<?= $userQuery ?>">
                                 <i class="bi bi-braces"></i> JSON Форматер
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?= ($current_page == '/modules/dev-tools.php') ? 'active' : '' ?>" href="/modules/dev-tools.php<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'dev-tools') ? 'active' : '' ?>" href="/?module=dev-tools<?= $userQuery ?>">
                                 <i class="bi bi-wrench-adjustable"></i> Конвертер / Хеші
                             </a>
                         </li>
@@ -81,7 +81,7 @@ $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlen
             </ul>
             <ul class="navbar-nav ms-auto align-items-center">
                 <?php if(isLoggedIn()): ?>
-                    <?php if($current_page == '/index.php' || $current_page == '/'): ?>
+                    <?php if($current_module == 'sites'): ?>
                         <li class="nav-item me-3">
                             <div class="form-check form-switch m-0 pt-1">
                                 <input class="form-check-input" type="checkbox" role="switch" id="editModeToggle">
@@ -96,14 +96,14 @@ $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlen
                         <span class="text-secondary"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($_SESSION['username'] ?? 'Користувач') ?></span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-danger" href="/modules/logout.php"><i class="bi bi-box-arrow-right"></i> Вихід</a>
+                        <a class="nav-link text-danger" href="/?module=logout"><i class="bi bi-box-arrow-right"></i> Вихід</a>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="/modules/login.php"><i class="bi bi-box-arrow-in-right"></i> Вхід</a>
+                        <a class="nav-link <?= ($current_module == 'login') ? 'active' : '' ?>" href="/?module=login"><i class="bi bi-box-arrow-in-right"></i> Вхід</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/modules/register.php"><i class="bi bi-person-plus"></i> Реєстрація</a>
+                        <a class="nav-link <?= ($current_module == 'register') ? 'active' : '' ?>" href="/?module=register"><i class="bi bi-person-plus"></i> Реєстрація</a>
                     </li>
                 <?php endif; ?>
             </ul>
@@ -113,7 +113,7 @@ $userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '?user=' . urlen
 
 <script>
 function copySecretUrl(secret) {
-    const url = window.location.origin + '/?user=' + secret;
+    const url = window.location.origin + '/?module=sites&user=' + secret;
     navigator.clipboard.writeText(url).then(() => {
         if (typeof toastr !== 'undefined') toastr.success('Секретний URL скопійовано!');
         else alert('Скопійовано: ' + url);

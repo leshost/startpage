@@ -1,9 +1,5 @@
 <?php
-require_once '../config/config.php';
-
 $pageTitle = 'Фінансовий калькулятор';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <!-- Chart.js -->
@@ -321,5 +317,3 @@ pInputs.forEach((input, index) => {
     });
 });
 </script>
-
-<?php require_once '../includes/footer.php'; ?>

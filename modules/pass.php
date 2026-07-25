@@ -1,9 +1,5 @@
 <?php
-require_once '../config/config.php';
-
 $pageTitle = 'Генератор паролів';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <div class="container py-5 d-flex justify-content-center">
@@ -118,5 +114,3 @@ function copyPass() {
 // Generate on load
 document.addEventListener('DOMContentLoaded', generate);
 </script>
-
-<?php require_once '../includes/footer.php'; ?>

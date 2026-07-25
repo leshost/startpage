@@ -1,8 +1,7 @@
 <?php
-require_once '../config/config.php';
 
 if (isLoggedIn()) {
-    header("Location: ../index.php");
+    header("Location: /");
     exit;
 }
 
@@ -23,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['secret_key'] = $user['secret_key'];
-            header("Location: ../index.php");
+            header("Location: /");
             exit;
         } else {
             $error = 'Невірний логін або пароль.';
@@ -32,8 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Вхід';
-require_once '../includes/header.php';
-require_once '../includes/navbar.php';
 ?>
 
 <div class="container py-5 d-flex justify-content-center">
@@ -57,9 +54,8 @@ require_once '../includes/navbar.php';
         </form>
         
         <div class="text-center mt-3">
-            <small class="text-secondary">Ще немає акаунта? <a href="register.php" class="text-info text-decoration-none">Зареєструватися</a></small>
+            <small class="text-secondary">Ще немає акаунта? <a href="/?module=register" class="text-info text-decoration-none">Зареєструватися</a></small>
         </div>
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
