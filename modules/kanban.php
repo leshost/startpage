@@ -6,13 +6,30 @@ if (!isLoggedIn()) {
 }
 
 // Auto-create table if not exists
+$pdo->exec("CREATE TABLE IF NOT EXISTS `kanban_projects` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `is_deleted` TINYINT(1) DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
 $pdo->exec("CREATE TABLE IF NOT EXISTS `tasks` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `project_id` INT DEFAULT NULL,
     `title` VARCHAR(255) NOT NULL,
     `status` ENUM('todo', 'in_progress', 'done') NOT NULL DEFAULT 'todo',
     `order_num` INT DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+try {
+    $pdo->exec("ALTER TABLE `tasks` ADD COLUMN `user_id` INT NOT NULL AFTER `id`");
+} catch (PDOException $e) {}
+try {
+    $pdo->exec("ALTER TABLE `tasks` ADD COLUMN `project_id` INT DEFAULT NULL AFTER `user_id`");
+} catch (PDOException $e) {}
 
 // AJAX Handler
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -21,16 +38,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     if ($action === 'add') {
         $title = trim($_POST['title'] ?? '');
+        $project_id = !empty($_POST['project_id']) ? (int)$_POST['project_id'] : null;
         if (!$title) {
             echo json_encode(['success' => false, 'message' => 'Пуста назва']);
             exit;
         }
-        $stmt = $pdo->prepare("INSERT INTO tasks (title, status, order_num, user_id) VALUES (?, 'todo', 0, ?)");
-        if ($stmt->execute([$title, $_SESSION['user_id']])) {
+        $stmt = $pdo->prepare("INSERT INTO tasks (title, status, order_num, user_id, project_id) VALUES (?, 'todo', 0, ?, ?)");
+        if ($stmt->execute([$title, $_SESSION['user_id'], $project_id])) {
             echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'title' => htmlspecialchars($title)]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
         }
+        exit;
+    }
+
+    if ($action === 'add_project') {
+        $name = trim($_POST['name'] ?? '');
+        if (!$name) {
+            echo json_encode(['success' => false, 'message' => 'Пуста назва']);
+            exit;
+        }
+        $stmt = $pdo->prepare("INSERT INTO kanban_projects (user_id, name) VALUES (?, ?)");
+        if ($stmt->execute([$_SESSION['user_id'], $name])) {
+            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'name' => htmlspecialchars($name)]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
+        }
+        exit;
+    }
+
+    if ($action === 'delete_project') {
+        $id = (int)($_POST['id'] ?? 0);
+        $stmt = $pdo->prepare("UPDATE kanban_projects SET is_deleted = 1 WHERE id = ? AND user_id = ?");
+        echo json_encode(['success' => $stmt->execute([$id, $_SESSION['user_id']])]);
         exit;
     }
 
@@ -55,9 +95,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     exit;
 }
 
-// Fetch tasks for rendering
-$stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? ORDER BY id ASC");
+// Fetch projects
+$stmt = $pdo->prepare("SELECT id, name FROM kanban_projects WHERE user_id = ? AND is_deleted = 0 ORDER BY created_at ASC");
 $stmt->execute([$_SESSION['user_id']]);
+$projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Active project
+$active_project_id = isset($_GET['project_id']) ? (int)$_GET['project_id'] : null;
+$active_project_name = "Загальна дошка";
+
+if ($active_project_id) {
+    $found = false;
+    foreach ($projects as $p) {
+        if ($p['id'] == $active_project_id) {
+            $found = true;
+            $active_project_name = $p['name'];
+            break;
+        }
+    }
+    if (!$found) $active_project_id = null;
+}
+
+// Task Counts per project
+$stmt = $pdo->prepare("SELECT project_id, COUNT(*) as count FROM tasks WHERE user_id = ? GROUP BY project_id");
+$stmt->execute([$_SESSION['user_id']]);
+$task_counts = [];
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $task_counts[$row['project_id'] ?: 'general'] = $row['count'];
+}
+
+// Fetch tasks for active project
+if ($active_project_id) {
+    $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? AND project_id = ? ORDER BY id ASC");
+    $stmt->execute([$_SESSION['user_id'], $active_project_id]);
+} else {
+    $stmt = $pdo->prepare("SELECT * FROM tasks WHERE user_id = ? AND project_id IS NULL ORDER BY id ASC");
+    $stmt->execute([$_SESSION['user_id']]);
+}
 $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $tasksByStatus = [
@@ -129,25 +203,51 @@ $pageTitle = 'Канбан-дошка';
 </style>
 
 <div class="container-fluid py-5 px-4 content">
-    <div class="row mb-4">
-        <div class="col-12 text-center">
-            <h2 class="text-light"><i class="bi bi-kanban text-info"></i> Канбан-дошка</h2>
-            <p class="text-secondary">Організуйте свої завдання. Перетягуйте їх між колонками мишкою.</p>
-        </div>
-    </div>
-
-    <!-- Add Task Form -->
-    <div class="row justify-content-center mb-5">
-        <div class="col-md-6 col-lg-4">
-            <form id="addTaskForm" class="d-flex">
-                <input type="text" id="taskTitle" class="form-control bg-dark text-light border-secondary me-2" placeholder="Що потрібно зробити?" required autocomplete="off">
-                <button type="submit" class="btn btn-primary text-nowrap"><i class="bi bi-plus-lg"></i> Додати</button>
+    <div class="row">
+        <!-- Sidebar: Projects -->
+        <div class="col-md-3 col-lg-2 mb-4">
+            <h5 class="text-light mb-3"><i class="bi bi-folder text-warning"></i> Проекти</h5>
+            <div class="list-group list-group-flush bg-dark rounded border border-secondary mb-3" style="overflow: hidden;">
+                <a href="/?module=kanban" class="list-group-item list-group-item-action border-secondary <?= !$active_project_id ? 'active bg-primary text-white' : 'bg-dark text-light' ?>">
+                    Загальна дошка <span class="badge <?= !$active_project_id ? 'bg-light text-primary' : 'bg-secondary' ?> float-end"><?= $task_counts['general'] ?? 0 ?></span>
+                </a>
+                <?php foreach($projects as $p): ?>
+                <div class="list-group-item list-group-item-action border-secondary d-flex justify-content-between align-items-center <?= $active_project_id == $p['id'] ? 'active bg-primary text-white' : 'bg-dark text-light' ?>">
+                    <a href="/?module=kanban&project_id=<?= $p['id'] ?>" class="text-decoration-none flex-grow-1 <?= $active_project_id == $p['id'] ? 'text-white' : 'text-light' ?>">
+                        <?= htmlspecialchars($p['name']) ?> <span class="<?= $active_project_id == $p['id'] ? 'text-light' : 'text-secondary' ?> small">(<?= $task_counts[$p['id']] ?? 0 ?>)</span>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger border-0 p-1 <?= $active_project_id == $p['id'] ? 'text-white' : '' ?>" onclick="deleteProject(<?= $p['id'] ?>)" title="Видалити проект"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <form id="addProjectForm" class="d-flex">
+                <input type="text" id="projectName" class="form-control form-control-sm bg-dark text-light border-secondary me-1" placeholder="Новий проект..." required autocomplete="off">
+                <button type="submit" class="btn btn-sm btn-success" title="Створити проект"><i class="bi bi-plus-lg"></i></button>
             </form>
         </div>
-    </div>
 
-    <!-- Kanban Board -->
-    <div class="row g-4 pb-5">
+        <!-- Main Board -->
+        <div class="col-md-9 col-lg-10">
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <h2 class="text-light"><i class="bi bi-kanban text-info"></i> <?= htmlspecialchars($active_project_name) ?></h2>
+                    <p class="text-secondary">Організуйте свої завдання. Перетягуйте їх між колонками мишкою.</p>
+                </div>
+            </div>
+
+            <!-- Add Task Form -->
+            <div class="row justify-content-center mb-5">
+                <div class="col-md-8 col-lg-6">
+                    <form id="addTaskForm" class="d-flex">
+                        <input type="hidden" id="currentProjectId" value="<?= $active_project_id ?: '' ?>">
+                        <input type="text" id="taskTitle" class="form-control bg-dark text-light border-secondary me-2" placeholder="Що потрібно зробити?" required autocomplete="off">
+                        <button type="submit" class="btn btn-primary text-nowrap"><i class="bi bi-plus-lg"></i> Додати завдання</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Kanban Board -->
+            <div class="row g-4 pb-5">
         
         <!-- To Do -->
         <div class="col-md-4">
@@ -197,7 +297,9 @@ $pageTitle = 'Канбан-дошка';
             </div>
         </div>
 
-    </div>
+    </div> <!-- End Kanban Board Row -->
+    </div> <!-- End Main Board Col -->
+    </div> <!-- End Main Row -->
 </div>
 
 <script>
@@ -269,9 +371,12 @@ document.getElementById('addTaskForm').addEventListener('submit', function(e) {
     const title = input.value.trim();
     if (!title) return;
 
+    const projectId = document.getElementById('currentProjectId').value;
+
     const fd = new FormData();
     fd.append('action', 'add');
     fd.append('title', title);
+    if (projectId) fd.append('project_id', projectId);
 
     fetch(window.location.href, { method: 'POST', body: fd })
         .then(r => r.json())
@@ -293,6 +398,51 @@ document.getElementById('addTaskForm').addEventListener('submit', function(e) {
         })
         .catch(() => toastr.error('Мережева помилка'));
 });
+
+// AJAX: Add Project
+document.getElementById('addProjectForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('projectName');
+    const name = input.value.trim();
+    if (!name) return;
+
+    const fd = new FormData();
+    fd.append('action', 'add_project');
+    fd.append('name', name);
+
+    fetch(window.location.href, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                toastr.success('Проект створено');
+                setTimeout(() => window.location.href = '/?module=kanban&project_id=' + d.id, 500);
+            } else {
+                toastr.error(d.message || 'Помилка');
+            }
+        })
+        .catch(() => toastr.error('Мережева помилка'));
+});
+
+// AJAX: Delete Project
+window.deleteProject = function(id) {
+    if (!confirm('Видалити цей проект? Завдання залишаться в базі, але проект буде сховано.')) return;
+    
+    const fd = new FormData();
+    fd.append('action', 'delete_project');
+    fd.append('id', id);
+
+    fetch(window.location.href, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                toastr.success('Проект видалено');
+                setTimeout(() => window.location.href = '/?module=kanban', 500);
+            } else {
+                toastr.error('Помилка видалення');
+            }
+        })
+        .catch(() => toastr.error('Мережева помилка'));
+}
 
 // AJAX: Delete Task
 window.deleteTask = function(btn, id) {
