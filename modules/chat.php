@@ -181,10 +181,20 @@ if ($action) {
 
     // --- ПОВІДОМЛЕННЯ ---
     if ($action == 'send_message') {
+        $receiverId = $data['receiver_id'] ?? 0;
+        
+        // Перевірка, чи є користувачі друзями
+        $stmt = $pdo->prepare("SELECT 1 FROM friends WHERE ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)) AND status = 'accepted'");
+        $stmt->execute([$myId, $receiverId, $receiverId, $myId]);
+        if (!$stmt->fetchColumn()) {
+            echo json_encode(['status' => 'error', 'message' => 'Можна надсилати повідомлення тільки друзям']);
+            exit;
+        }
+
         $stmt = $pdo->prepare("INSERT INTO messages (sender_id, receiver_id, encrypted_content, encrypted_for_sender) VALUES (?, ?, ?, ?)");
         $success = $stmt->execute([
             $myId, 
-            $data['receiver_id'], 
+            $receiverId, 
             $data['content'], 
             $data['content_self']
         ]);
