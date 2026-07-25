@@ -170,14 +170,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         }
         exit();
     }
-    
+
     // Reorder Sites
     if ($_POST['action'] === 'reorder' && isset($_POST['order'])) {
         $orderArray = json_decode($_POST['order'], true);
         if (is_array($orderArray)) {
-            $stmt = $pdo->prepare("UPDATE sites SET `order` = :order WHERE id = :id");
+            // Додаємо AND user = :user_id — UPDATE буде ігнорувати чужі ID,
+            // навіть якщо зловмисник передасть чужі site ID
+            $stmt = $pdo->prepare("
+                UPDATE sites SET `order` = :order
+                WHERE id = :id AND user = :user_id
+            ");
             foreach ($orderArray as $index => $id) {
-                $stmt->execute(['order' => $index, 'id' => (int)$id]);
+                $stmt->execute([
+                    'order'   => $index,
+                    'id'      => (int)$id,
+                    'user_id' => $_SESSION['user_id'],
+                ]);
             }
             echo json_encode(['success' => true]);
         } else {
