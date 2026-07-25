@@ -155,9 +155,33 @@ body.edit-mode-active .site-item {
 body.edit-mode-active .site-item:active {
     cursor: grabbing;
 }
+.sites-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 1800px; /* Дозволяє розтягуватись на широких екранах */
+    margin: 0 auto;
+    gap: 1.5rem;
+}
+.sites-grid .site-item {
+    width: 90px;
+}
+@media (min-width: 576px) {
+    .sites-grid { gap: 2rem; }
+    .sites-grid .site-item { width: 100px; }
+}
+@media (min-width: 992px) {
+    .sites-grid { gap: 2.5rem; }
+    .sites-grid .site-item { width: 110px; }
+}
+@media (min-width: 1400px) {
+    .sites-grid { gap: 3rem; }
+    .sites-grid .site-item { width: 115px; }
+}
 </style>
 
-<div class="container d-flex flex-column justify-content-center align-items-center min-vh-100 content py-5">
+<div class="container-fluid d-flex flex-column justify-content-center align-items-center min-vh-100 content py-5 px-3 px-md-5">
     
     <!-- IP and OS Info -->
     <div class="text-center text-light text-shadow mb-4 mt-2">
@@ -170,10 +194,10 @@ body.edit-mode-active .site-item:active {
     </div>
 
     <!-- Sites Grid -->
-    <div class="container-lg">
-        <div class="row justify-content-center gap-4" id="sites-container">
+    <div class="w-100 px-2 px-md-4">
+        <div class="sites-grid w-100" id="sites-container">
             <?php foreach ($sites as $site): ?>
-                <div class="col-lg-1 col-md-3 col-sm-4 col-4 d-flex flex-column align-items-center position-relative site-item" data-id="<?= $site['id'] ?>">
+                <div class="d-flex flex-column align-items-center position-relative site-item" data-id="<?= $site['id'] ?>">
                     <a href="<?= htmlspecialchars($site['url']) ?>" class="d-block text-decoration-none text-light w-100">
                         <div class="link-box">
                             <?php if (isLoggedIn() && $site['user'] == $_SESSION['user_id']): ?>
@@ -363,7 +387,7 @@ document.getElementById('addSiteForm')?.addEventListener('submit', function(e) {
                 const displayClass = isEditMode ? '' : 'd-none';
                 
                 const newSiteHTML = `
-                    <div class="col-lg-1 col-md-3 col-sm-4 col-4 d-flex flex-column align-items-center position-relative site-item" data-id="${data.id}">
+                    <div class="d-flex flex-column align-items-center position-relative site-item" data-id="${data.id}">
                         <a href="${data.url}" class="d-block text-decoration-none text-light w-100">
                             <div class="link-box">
                                 <button type="button" class="delete-btn edit-element ${displayClass}" onclick="deleteSite(event, ${data.id})">
