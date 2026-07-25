@@ -5,9 +5,24 @@ if (isLoggedIn()) {
     exit;
 }
 
-$error = '';
+$error   = '';
 $success = '';
 
+// ── Таблиця invite_codes (тільки якщо реєстрація закрита) ─────────────────────
+if (!OPEN_REGISTRATION) {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `invite_codes` (
+        `id`         INT AUTO_INCREMENT PRIMARY KEY,
+        `code`       VARCHAR(32) NOT NULL UNIQUE,
+        `created_by` INT NOT NULL,
+        `used_by`    INT NULL DEFAULT NULL,
+        `used_at`    TIMESTAMP NULL DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_code (`code`),
+        FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+}
+
+// ── Стандартні міграції таблиці users ─────────────────────────────────────────
 try {
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS `users` (
@@ -28,11 +43,13 @@ try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_blocked` BOOLEAN DEFAULT FA
 try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `public_key` TEXT NULL"); } catch (PDOException $e) {}
 try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `private_key` TEXT NULL"); } catch (PDOException $e) {}
 
+// ── Обробка форми ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
+    $username         = trim($_POST['username'] ?? '');
+    $password         = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
+    $invite_code      = trim($_POST['invite_code'] ?? '');
 
     if (empty($username) || empty($password)) {
         $error = 'Всі поля обов\'язкові для заповнення.';
@@ -43,20 +60,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($password) < 6) {
         $error = 'Пароль повинен містити не менше 6 символів.';
     } else {
-        // Перевірка на унікальність
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
-        $stmt->execute([$username]);
-        if ($stmt->fetchColumn() > 0) {
-            $error = 'Користувач з таким логіном вже існує.';
-        } else {
-            // Реєстрація
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $secret_key = bin2hex(random_bytes(16));
-            $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, secret_key) VALUES (?, ?, ?)");
-            if ($stmt->execute([$username, $hash, $secret_key])) {
-                $success = 'Реєстрація успішна! Тепер ви можете <a href="/?module=login" class="alert-link">увійти</a>.';
+
+        // ── Перевірка коду запрошення ──────────────────────────────────────────
+        $inviteRow = null;
+        if (!OPEN_REGISTRATION) {
+            if (empty($invite_code)) {
+                $error = 'Введіть код запрошення.';
             } else {
-                $error = 'Помилка бази даних під час реєстрації.';
+                $stmt = $pdo->prepare("SELECT id FROM invite_codes WHERE code = ? AND used_by IS NULL");
+                $stmt->execute([$invite_code]);
+                $inviteRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!$inviteRow) {
+                    $error = 'Невірний або вже використаний код запрошення.';
+                }
+            }
+        }
+
+        if (!$error) {
+            // Перевірка на унікальність username
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+            if ($stmt->fetchColumn() > 0) {
+                $error = 'Користувач з таким логіном вже існує.';
+            } else {
+                // Реєстрація
+                $hash       = password_hash($password, PASSWORD_DEFAULT);
+                $secret_key = bin2hex(random_bytes(16));
+                $stmt       = $pdo->prepare("INSERT INTO users (username, password_hash, secret_key) VALUES (?, ?, ?)");
+                if ($stmt->execute([$username, $hash, $secret_key])) {
+                    $newUserId = (int)$pdo->lastInsertId();
+
+                    // Позначаємо код як використаний
+                    if (!OPEN_REGISTRATION && $inviteRow) {
+                        $pdo->prepare("UPDATE invite_codes SET used_by = ?, used_at = NOW() WHERE id = ?")
+                            ->execute([$newUserId, $inviteRow['id']]);
+                    }
+
+                    $success = 'Реєстрація успішна! Тепер ви можете <a href="/?module=login" class="alert-link">увійти</a>.';
+                } else {
+                    $error = 'Помилка бази даних під час реєстрації.';
+                }
             }
         }
     }
@@ -68,6 +111,13 @@ $pageTitle = 'Реєстрація';
 <div class="container py-5 d-flex justify-content-center">
     <div class="tool-box w-100" style="max-width: 400px;">
         <h3 class="text-center mb-4"><i class="bi bi-person-plus text-info"></i> Реєстрація</h3>
+
+        <?php if (!OPEN_REGISTRATION): ?>
+            <div class="alert alert-secondary border-secondary py-2 mb-3 small">
+                <i class="bi bi-shield-lock me-1 text-warning"></i>
+                Реєстрація доступна лише за запрошенням. Зверніться до адміністратора.
+            </div>
+        <?php endif; ?>
 
         <?php if ($error): ?>
             <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
@@ -91,6 +141,18 @@ $pageTitle = 'Реєстрація';
                     <input type="password" name="password_confirm" id="regPasswordConfirm" class="form-control bg-dark text-light border-secondary" required>
                     <div id="pwdStatus" class="form-text mt-1"></div>
                 </div>
+
+                <?php if (!OPEN_REGISTRATION): ?>
+                <div class="mb-4">
+                    <label class="form-label text-light">
+                        <i class="bi bi-ticket-perforated text-warning me-1"></i>Код запрошення
+                    </label>
+                    <input type="text" name="invite_code" class="form-control bg-dark text-light border-secondary font-monospace"
+                           placeholder="xxxx-xxxx-xxxx-xxxx" required
+                           value="<?= htmlspecialchars($_POST['invite_code'] ?? '') ?>">
+                </div>
+                <?php endif; ?>
+
                 <button type="submit" id="regSubmitBtn" class="btn btn-primary w-100">Зареєструватися</button>
             </form>
             <div class="text-center mt-3">
@@ -185,4 +247,3 @@ if (passwordInput && confirmInput) {
     confirmInput.addEventListener('input', validatePassword);
 }
 </script>
-

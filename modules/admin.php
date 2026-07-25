@@ -73,6 +73,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         }
         exit;
     }
+
+    // ── Запрошення ──────────────────────────────────────────────────────────
+    if ($_POST['action'] === 'generate_invite') {
+        if (OPEN_REGISTRATION) {
+            echo json_encode(['success' => false, 'message' => 'Реєстрація відкрита — запрошення не потрібні']);
+            exit;
+        }
+        // Формат: xxxx-xxxx-xxxx-xxxx (16 байт = 32 hex символи)
+        $raw  = bin2hex(random_bytes(8));
+        $code = implode('-', str_split($raw, 4));
+        $stmt = $pdo->prepare("INSERT INTO invite_codes (code, created_by) VALUES (?, ?)");
+        if ($stmt->execute([$code, $_SESSION['user_id']])) {
+            echo json_encode(['success' => true, 'code' => $code, 'id' => $pdo->lastInsertId()]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Помилка генерації']);
+        }
+        exit;
+    }
+
+    if ($_POST['action'] === 'revoke_invite' && isset($_POST['id'])) {
+        $stmt = $pdo->prepare("DELETE FROM invite_codes WHERE id = ? AND used_by IS NULL");
+        $stmt->execute([(int)$_POST['id']]);
+        echo json_encode(['success' => true]);
+        exit;
+    }
 }
 
 // Отримання даних для відображення
@@ -81,6 +106,22 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $sitesStmt = $pdo->query("SELECT id, name, url, icon FROM sites WHERE user IS NULL ORDER BY `order` ASC, id DESC");
 $sharedSites = $sitesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Запрошення — завантажуємо тільки якщо реєстрація закрита
+$inviteCodes = [];
+if (!OPEN_REGISTRATION) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT ic.id, ic.code, ic.created_at,
+                   ub.username AS used_by_name, ic.used_at
+            FROM invite_codes ic
+            LEFT JOIN users ub ON ic.used_by = ub.id
+            ORDER BY ic.created_at DESC
+        ");
+        $stmt->execute();
+        $inviteCodes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
 
 $pageTitle = 'Адмін Панель';
 ?>
@@ -100,6 +141,15 @@ $pageTitle = 'Адмін Панель';
         <li class="nav-item" role="presentation">
             <button class="nav-link text-light border-secondary" id="sites-tab" data-bs-toggle="tab" data-bs-target="#sites-pane" type="button" role="tab"><i class="bi bi-globe"></i> Спільні сайти</button>
         </li>
+        <?php if (!OPEN_REGISTRATION): ?>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-light border-secondary" id="invites-tab" data-bs-toggle="tab" data-bs-target="#invites-pane" type="button" role="tab">
+                <i class="bi bi-ticket-perforated text-warning"></i> Запрошення
+                <?php $unused = count(array_filter($inviteCodes, fn($c) => !$c['used_by_name'])); ?>
+                <?php if ($unused > 0): ?><span class="badge bg-warning text-dark ms-1"><?= $unused ?></span><?php endif; ?>
+            </button>
+        </li>
+        <?php endif; ?>
     </ul>
 
     <div class="tab-content" id="adminTabContent">
@@ -208,6 +258,74 @@ $pageTitle = 'Адмін Панель';
                 </div>
             </div>
         </div>
+
+        <?php if (!OPEN_REGISTRATION): ?>
+        <!-- Запрошення -->
+        <div class="tab-pane fade" id="invites-pane" role="tabpanel" tabindex="0">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="tool-box">
+                        <h5 class="mb-3"><i class="bi bi-ticket-perforated text-warning"></i> Генерація коду</h5>
+                        <p class="text-secondary small">Реєстрація закрита. Надайте код запрошення довіреній особі — він діє один раз.</p>
+                        <button id="generateInviteBtn" class="btn btn-warning w-100">
+                            <i class="bi bi-plus-circle"></i> Згенерувати код
+                        </button>
+                        <div id="newInviteBox" class="mt-3 d-none">
+                            <label class="form-label text-secondary small">Новий код:</label>
+                            <div class="input-group">
+                                <input type="text" id="newInviteCode" class="form-control bg-dark text-warning border-secondary font-monospace" readonly>
+                                <button class="btn btn-outline-secondary" onclick="copyInvite()" title="Копіювати"><i class="bi bi-clipboard"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="tool-box">
+                        <h5 class="mb-3">Список кодів запрошень</h5>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0" id="inviteTable">
+                                <thead>
+                                    <tr>
+                                        <th>Код</th>
+                                        <th>Створено</th>
+                                        <th>Використано</th>
+                                        <th>Дії</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($inviteCodes as $inv): ?>
+                                    <tr id="invite-row-<?= $inv['id'] ?>">
+                                        <td><code class="text-warning"><?= htmlspecialchars($inv['code']) ?></code></td>
+                                        <td><small class="text-secondary"><?= date('d.m.Y H:i', strtotime($inv['created_at'])) ?></small></td>
+                                        <td>
+                                            <?php if ($inv['used_by_name']): ?>
+                                                <span class="badge bg-success"><?= htmlspecialchars($inv['used_by_name']) ?></span>
+                                                <small class="text-secondary ms-1"><?= date('d.m.Y', strtotime($inv['used_at'])) ?></small>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Не використано</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!$inv['used_by_name']): ?>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="revokeInvite(<?= $inv['id'] ?>)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                    <?php if (empty($inviteCodes)): ?>
+                                    <tr id="emptyRow"><td colspan="4" class="text-center text-secondary py-3">Кодів ще немає</td></tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </div>
 </div>
 
@@ -317,5 +435,62 @@ function deleteSharedSite(id) {
         }
     })
     .catch(err => console.error(err));
+}
+
+// ── Запрошення ────────────────────────────────────────────────────────────────
+document.getElementById('generateInviteBtn')?.addEventListener('click', function() {
+    this.disabled = true;
+    const fd = new FormData();
+    fd.append('action', 'generate_invite');
+    fetch(window.location.href, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+            this.disabled = false;
+            if (!d.success) { toastr.error(d.message || 'Помилка'); return; }
+
+            // Показуємо новий код
+            document.getElementById('newInviteBox').classList.remove('d-none');
+            document.getElementById('newInviteCode').value = d.code;
+
+            // Додаємо рядок у таблицю
+            const tbody = document.querySelector('#inviteTable tbody');
+            document.getElementById('emptyRow')?.remove();
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('uk-UA', {day:'2-digit',month:'2-digit',year:'numeric'}) +
+                            ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit',minute:'2-digit'});
+            const tr = document.createElement('tr');
+            tr.id = 'invite-row-' + d.id;
+            tr.innerHTML = `
+                <td><code class="text-warning">${d.code}</code></td>
+                <td><small class="text-secondary">${dateStr}</small></td>
+                <td><span class="badge bg-secondary">Не використано</span></td>
+                <td><button class="btn btn-sm btn-outline-danger" onclick="revokeInvite(${d.id})"><i class="bi bi-trash"></i></button></td>
+            `;
+            tbody.insertAdjacentElement('afterbegin', tr);
+            toastr.success('Код згенеровано!');
+        })
+        .catch(() => { this.disabled = false; toastr.error('Мережева помилка'); });
+});
+
+function copyInvite() {
+    const code = document.getElementById('newInviteCode').value;
+    navigator.clipboard.writeText(code).then(() => toastr.info('Код скопійовано!'));
+}
+
+function revokeInvite(id) {
+    if (!confirm('Анулювати цей код запрошення?')) return;
+    const fd = new FormData();
+    fd.append('action', 'revoke_invite');
+    fd.append('id', id);
+    fetch(window.location.href, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                document.getElementById('invite-row-' + id)?.remove();
+                toastr.success('Код анульовано');
+            } else {
+                toastr.error('Помилка');
+            }
+        });
 }
 </script>
