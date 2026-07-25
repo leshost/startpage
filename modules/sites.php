@@ -100,18 +100,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     }
     
     // Add Site
-    if ($_POST['action'] === 'add' && isset($_POST['name'], $_POST['url'], $_POST['icon'])) {
+    if ($_POST['action'] === 'add' && isset($_POST['name'], $_POST['url'])) {
         $url = trim($_POST['url']);
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
             echo json_encode(['success' => false, 'message' => 'Некоректний URL']);
             exit();
+        }
+        
+        $icon = trim($_POST['icon'] ?? '');
+        if (empty($icon)) {
+            $parsedUrl = parse_url($url);
+            $host = $parsedUrl['host'] ?? '';
+            $icon = "https://www.google.com/s2/favicons?domain=" . urlencode($host) . "&sz=128";
         }
 
         $stmt = $pdo->prepare("INSERT INTO sites (name, url, icon, user) VALUES (:name, :url, :icon, :user)");
         if($stmt->execute([
             'name' => trim($_POST['name']),
             'url' => $url,
-            'icon' => trim($_POST['icon']),
+            'icon' => $icon,
             'user' => $_SESSION['user_id']
         ])) {
             echo json_encode([
@@ -119,7 +126,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
                 'id' => $pdo->lastInsertId(),
                 'name' => htmlspecialchars(trim($_POST['name'])),
                 'url' => htmlspecialchars($url),
-                'icon' => htmlspecialchars(trim($_POST['icon']))
+                'icon' => htmlspecialchars($icon)
             ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
@@ -128,18 +135,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     }
     
     // Edit Site
-    if ($_POST['action'] === 'edit' && isset($_POST['id'], $_POST['name'], $_POST['url'], $_POST['icon'])) {
+    if ($_POST['action'] === 'edit' && isset($_POST['id'], $_POST['name'], $_POST['url'])) {
         $url = trim($_POST['url']);
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
             echo json_encode(['success' => false, 'message' => 'Некоректний URL']);
             exit();
         }
 
+        $icon = trim($_POST['icon'] ?? '');
+        if (empty($icon)) {
+            $parsedUrl = parse_url($url);
+            $host = $parsedUrl['host'] ?? '';
+            $icon = "https://www.google.com/s2/favicons?domain=" . urlencode($host) . "&sz=128";
+        }
+
         $stmt = $pdo->prepare("UPDATE sites SET name = :name, url = :url, icon = :icon WHERE id = :id AND user = :user_id");
         if($stmt->execute([
             'name' => trim($_POST['name']),
             'url' => $url,
-            'icon' => trim($_POST['icon']),
+            'icon' => $icon,
             'id' => (int)$_POST['id'],
             'user_id' => $_SESSION['user_id']
         ])) {
@@ -148,7 +162,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
                 'id' => (int)$_POST['id'],
                 'name' => htmlspecialchars(trim($_POST['name'])),
                 'url' => htmlspecialchars($url),
-                'icon' => htmlspecialchars(trim($_POST['icon']))
+                'icon' => htmlspecialchars($icon)
             ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
@@ -352,7 +366,8 @@ body.edit-mode-active .site-item:active {
                     <input type="url" id="addUrl" class="form-control" placeholder="URL" required>
                 </div>
                 <div class="mb-3">
-                    <input type="text" id="addIcon" class="form-control" placeholder="URL іконки" required>
+                    <input type="text" id="addIcon" class="form-control" placeholder="URL іконки (необов'язково)">
+                    <div class="form-text text-secondary small">Якщо залишити порожнім, іконка підтягнеться автоматично.</div>
                 </div>
                 <button type="submit" id="formSubmitBtn" class="btn btn-success w-100">Додати сайт</button>
                 <button type="button" id="cancelEditBtn" class="btn btn-secondary w-100 mt-2 d-none">Скасувати редагування</button>
