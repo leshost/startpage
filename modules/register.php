@@ -57,8 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Логін повинен містити не менше 3 символів.';
     } elseif ($password !== $password_confirm) {
         $error = 'Паролі не співпадають.';
-    } elseif (strlen($password) < 6) {
-        $error = 'Пароль повинен містити не менше 6 символів.';
+    } elseif (strlen($password) < 8) {
+        $error = 'Пароль повинен містити не менше 8 символів.';
     } else {
 
         // ── Перевірка коду запрошення ──────────────────────────────────────────
@@ -194,8 +194,8 @@ function validatePassword() {
         return;
     }
 
-    if (password.length < 6) {
-        pwdStatus.innerHTML = '<span class="text-secondary">Пароль занадто короткий</span>';
+    if (password.length < 8) {
+        pwdStatus.innerHTML = '<span class="text-secondary">Пароль занадто короткий (мінімум 8 символів)</span>';
         submitBtn.disabled = true;
         return;
     }
