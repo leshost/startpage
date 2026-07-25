@@ -1,5 +1,8 @@
 # StartPage & Web Tools
 
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-black.svg?logo=github)](https://github.com/leshost/startpage)
 ![Getting Started](./screen.png)
 
 Багатофункціональна стартова сторінка (Startpage) для браузера з інтегрованими корисними веб-інструментами, панеллю адміністратора та сучасним темним дизайном.
@@ -72,3 +75,6 @@
 - **Сесії:** Для доступу до панелі адміністратора використовуються безпечні PHP-сесії.
 - **AJAX:** Взаємодія з БД для видалення/додавання закладок захищена перевіркою авторизації на стороні сервера.
 - Для входу в адмін-панель натисніть на іконку шестерні (⚙️) у верхньому правому куті навігаційного меню.
+
+## 📄 Ліцензія
+Цей проект розповсюджується під ліцензією [MIT](https://opensource.org/licenses/MIT). Ви можете вільно використовувати, змінювати та поширювати цей код.
