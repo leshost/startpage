@@ -34,7 +34,7 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 // Дії, що змінюють стан даних — потребують CSRF-захисту
 $csrfRequiredActions = [
-    'init_keys', 'save_private_key', 'force_save_private_key', 'delete_private_key',
+    'init_keys', 'mark_key_saved',
     'send_friend_request', 'accept_friend_request', 'reject_friend_request',
     'send_message', 'mark_as_read',
 ];
@@ -61,7 +61,7 @@ if ($action) {
     }
 
     if ($action == 'get_my_info') {
-        $stmt = $pdo->prepare("SELECT username, public_key, private_key FROM users WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT username, public_key FROM users WHERE id = ?");
         $stmt->execute([$myId]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -69,8 +69,7 @@ if ($action) {
             echo json_encode([
                 'status'      => 'success',
                 'username'    => $user['username'],
-                'public_key'  => $user['public_key'],
-                'private_key' => $user['private_key']
+                'public_key'  => $user['public_key']
             ]);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'User not found']);
@@ -78,25 +77,10 @@ if ($action) {
         exit;
     }
 
-    if ($action == 'save_private_key') {
-        $encryptedKey = $data['encrypted_key'] ?? '';
-        $stmt = $pdo->prepare("UPDATE users SET private_key = ? WHERE id = ? AND (private_key IS NULL OR private_key = '')");
-        $stmt->execute([$encryptedKey, $myId]);
-        echo json_encode(['status' => 'success']);
-        exit;
-    }
-
-    if ($action == 'force_save_private_key') {
-        $encryptedKey = $data['encrypted_key'] ?? '';
-        $stmt = $pdo->prepare("UPDATE users SET private_key = ? WHERE id = ?");
-        $stmt->execute([$encryptedKey, $myId]);
-        echo json_encode(['status' => 'success']);
-        exit;
-    }
-
-    if ($action == 'delete_private_key') {
-        $stmt = $pdo->prepare("UPDATE users SET private_key = NULL WHERE id = ?");
+    if ($action == 'mark_key_saved') {
+        $stmt = $pdo->prepare("UPDATE users SET is_key_saved = 1 WHERE id = ?");
         $stmt->execute([$myId]);
+        $_SESSION['is_key_saved'] = true;
         echo json_encode(['status' => 'success']);
         exit;
     }
@@ -234,10 +218,11 @@ if ($action) {
 }
 
 // Перевірка чи ініціалізовано
-$stmt = $pdo->prepare("SELECT public_key FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT public_key, is_key_saved FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 $isInitialized = !empty($user['public_key']);
+$isKeySaved = $user['is_key_saved'] ?? true;
 
 $pageTitle = 'Секретний Чат';
 ?>
@@ -424,6 +409,14 @@ $pageTitle = 'Секретний Чат';
             .msg-me { background: #0dcaf0; color: #000; border-radius: 12px 12px 0 12px; }
             .msg-them { background: #343a40; color: #fff; border-radius: 12px 12px 12px 0; border: 1px solid #495057; }
         </style>
+        
+        <?php if (!$isKeySaved && $isInitialized): ?>
+        <div id="keyReminderBanner" class="alert alert-danger shadow mb-4">
+            <strong><i class="bi bi-exclamation-triangle-fill fs-5"></i> КРИТИЧНО ВАЖЛИВО!</strong> 
+            Ви ще не зберегли свій приватний ключ. Збережіть його просто зараз, щоб не втратити доступ!
+            <button class="btn btn-sm btn-danger ms-3 text-uppercase fw-bold" onclick="exportPrivateKey()"><i class="bi bi-download"></i> Зберегти ключ</button>
+        </div>
+        <?php endif; ?>
 
         <div class="row g-4">
             <div class="col-md-4">
@@ -452,8 +445,6 @@ $pageTitle = 'Секретний Чат';
                         <div class="d-grid gap-2">
                             <button onclick="exportPrivateKey()" class="btn btn-sm btn-outline-secondary text-start"><i class="bi bi-download"></i> Завантажити бекап ключа</button>
                             <button onclick="document.getElementById('importFile').click()" class="btn btn-sm btn-outline-info text-start"><i class="bi bi-upload"></i> Відновити з файлу</button>
-                            <button onclick="syncKeyToServer()" class="btn btn-sm btn-outline-success text-start"><i class="bi bi-cloud-upload"></i> Синхронізувати із сервером</button>
-                            <button onclick="deleteKeyFromServer()" class="btn btn-sm btn-outline-danger text-start"><i class="bi bi-trash"></i> Видалити із сервера</button>
                             <input type="file" id="importFile" class="d-none" onchange="importPrivateKey(this)">
                         </div>
                     </div>
@@ -656,25 +647,6 @@ $pageTitle = 'Секретний Чат';
             } catch (e) { return false; }
         }
 
-        async function savePrivateKeyToServer(force = false) {
-            const encryptedKey = localStorage.getItem('chat_priv_key_encrypted');
-            if (!encryptedKey) return;
-            const action = force ? 'force_save_private_key' : 'save_private_key';
-            try {
-                const res = await fetch(`/?module=chat&action=${action}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ encrypted_key: encryptedKey })
-                });
-            } catch (e) { console.error('Помилка збереження ключа', e); }
-        }
-
-        async function syncKeyToServer() {
-            if (!localStorage.getItem('chat_priv_key_encrypted')) return toastr.warning('Ключ відсутній у браузері.');
-            if (!confirm('Перезаписати ключ на сервері поточним ключем із цього браузера?')) return;
-            await savePrivateKeyToServer(true);
-            toastr.success('Ключ успішно оновлено на сервері!');
-        }
-
         function exportPrivateKey() {
             const data = localStorage.getItem('chat_priv_key_encrypted');
             if (!data) return toastr.warning("Немає ключа для експорту.");
@@ -689,6 +661,13 @@ $pageTitle = 'Секретний Чат';
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            
+            // Mark key as saved
+            fetch('/?module=chat&action=mark_key_saved', { method: 'POST' })
+                .then(() => {
+                    document.querySelectorAll('#keyReminderBanner').forEach(b => b.remove());
+                })
+                .catch(e => console.error(e));
         }
 
         async function importPrivateKey(input) {
@@ -923,13 +902,6 @@ $pageTitle = 'Секретний Чат';
             });
             container.innerHTML = html;
             updateUnreadCounters();
-        }
-
-        async function deleteKeyFromServer() {
-            if (!confirm('Видалити ключ із сервера? Вхід з інших пристроїв потребуватиме бекап-файлу.')) return;
-            const res = await fetch('/?module=chat&action=delete_private_key', { method: 'POST' });
-            if (res.ok) toastr.success('Ключ видалено з сервера.');
-            else toastr.error('Помилка видалення ключа.');
         }
         </script>
     <?php endif; ?>

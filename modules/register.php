@@ -33,7 +33,7 @@ try {
             `is_admin` BOOLEAN DEFAULT FALSE,
             `is_blocked` BOOLEAN DEFAULT FALSE,
             `public_key` TEXT NULL,
-            `private_key` TEXT NULL,
+            `is_key_saved` BOOLEAN DEFAULT FALSE,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
@@ -41,8 +41,7 @@ try {
 } catch (PDOException $e) {}
 try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_blocked` BOOLEAN DEFAULT FALSE"); } catch (PDOException $e) {}
 try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `public_key` TEXT NULL"); } catch (PDOException $e) {}
-try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `private_key` TEXT NULL"); } catch (PDOException $e) {}
-
+try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_key_saved` BOOLEAN DEFAULT FALSE"); } catch (PDOException $e) {}
 // ── Обробка форми ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();

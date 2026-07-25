@@ -144,3 +144,31 @@ function copySecretUrl(secret) {
     });
 }
 </script>
+
+<?php if (isLoggedIn() && isset($pdo) && $current_module !== 'chat'): ?>
+    <?php
+    $showReminder = false;
+    if (!isset($_SESSION['is_key_saved'])) {
+        try {
+            $stmt = $pdo->prepare("SELECT public_key, is_key_saved FROM users WHERE id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $uRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($uRow && !empty($uRow['public_key'])) {
+                $_SESSION['is_key_saved'] = (bool)$uRow['is_key_saved'];
+            } else {
+                $_SESSION['is_key_saved'] = true; // No keys generated, nothing to save
+            }
+        } catch (Exception $e) {}
+    }
+    if (isset($_SESSION['is_key_saved']) && !$_SESSION['is_key_saved']) {
+        $showReminder = true;
+    }
+    ?>
+    <?php if ($showReminder): ?>
+        <div id="keyReminderBanner" class="alert alert-danger rounded-0 mb-0 border-0 text-center shadow">
+            <strong><i class="bi bi-exclamation-triangle-fill fs-5"></i> КРИТИЧНО ВАЖЛИВО!</strong> 
+            Ви ще не зберегли свій приватний ключ. Якщо ваші сесії будуть очищені, ви назавжди втратите доступ до своїх переписок! 
+            <a href="/?module=chat" class="btn btn-sm btn-danger ms-3 text-uppercase fw-bold"><i class="bi bi-shield-lock"></i> Перейдіть в чат, щоб зберегти ключ</a>
+        </div>
+    <?php endif; ?>
+<?php endif; ?>
