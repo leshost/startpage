@@ -2,6 +2,9 @@
 require_once 'config/config.php';
 require_once 'includes/functions.php';
 
+// Базовий Content Security Policy (CSP)
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: blob: https: http:; font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://api.pwnedpasswords.com; frame-src 'self'; object-src 'none';");
+
 // Визначаємо поточний модуль
 $module = $_GET['module'] ?? 'sites';
 // Захист від directory traversal
