@@ -184,6 +184,21 @@ $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $userIp = getUserIP();
 $clientInfo = getClientInfo();
 
+$chatUnread = [];
+if (isLoggedIn()) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT u.username, COUNT(m.id) as unread_count
+            FROM messages m
+            JOIN users u ON m.sender_id = u.id
+            WHERE m.receiver_id = ? AND m.is_read = 0
+            GROUP BY m.sender_id
+        ");
+        $stmt->execute([$_SESSION['user_id']]);
+        $chatUnread = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+
 $pageTitle = 'Головна';
 $bodyClass = 'startpage-body';
 
@@ -226,14 +241,81 @@ body.edit-mode-active .site-item:active {
 
 <div class="container-fluid d-flex flex-column justify-content-center align-items-center min-vh-100 content py-5 px-3 px-md-5">
     
-    <!-- IP and OS Info -->
-    <div class="text-center text-light text-shadow mb-4 mt-2">
-        <h1 class="display-5 fw-bold mb-2"><?= htmlspecialchars($userIp) ?></h1>
-        <p class="fs-5 text-light mb-1">
-            <i class="bi bi-browser-chrome text-info"></i> <?= htmlspecialchars($clientInfo['browser']) ?> &nbsp;|&nbsp; 
-            <i class="bi bi-display text-warning"></i> <?= htmlspecialchars($clientInfo['os']) ?>
-        </p>
-        <p class="text-secondary small font-monospace mt-2 mx-auto" style="max-width: 600px;"><?= htmlspecialchars($clientInfo['raw']) ?></p>
+    <!-- Top Header Row -->
+    <div class="row w-100 mb-5 mt-2 align-items-center justify-content-between px-md-4">
+        
+        <!-- Left: IP and OS Info -->
+        <div class="col-md-3 text-start text-light text-shadow d-none d-md-block">
+            <h5 class="fw-bold mb-1"><i class="bi bi-hdd-network text-success"></i> <?= htmlspecialchars($userIp) ?></h5>
+            <p class="small text-light mb-0" style="opacity: 0.8;">
+                <i class="bi bi-browser-chrome text-info"></i> <?= htmlspecialchars($clientInfo['browser']) ?> &nbsp;|&nbsp; 
+                <i class="bi bi-display text-warning"></i> <?= htmlspecialchars($clientInfo['os']) ?>
+            </p>
+        </div>
+
+        <!-- Center: Search Form -->
+        <div class="col-md-6 text-center">
+            <form action="https://duckduckgo.com/" method="GET" target="_blank" id="searchForm" class="d-flex justify-content-center">
+                <div class="input-group" style="max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-radius: 20px;">
+                    <input type="text" name="q" class="form-control bg-dark text-light border-secondary form-control-lg px-4" placeholder="Пошук..." required autofocus style="border: none; border-top-left-radius: 20px; border-bottom-left-radius: 20px;">
+                    
+                    <button class="btn btn-dark border-start border-secondary dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="searchEngineBtn">
+                        🦆
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                        <li><a class="dropdown-item" href="#" onclick="setEngine(event, 'duckduckgo', '🦆')">🦆 DuckDuckGo</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setEngine(event, 'google', '<i class=&quot;bi bi-google&quot;></i>')"><i class="bi bi-google"></i> Google</a></li>
+                    </ul>
+
+                    <button class="btn btn-primary px-4" type="submit" style="border-top-right-radius: 20px; border-bottom-right-radius: 20px;">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+            <script>
+                function setEngine(e, engine, iconHTML) {
+                    e.preventDefault();
+                    const form = document.getElementById('searchForm');
+                    const btn = document.getElementById('searchEngineBtn');
+                    btn.innerHTML = iconHTML;
+                    if (engine === 'google') {
+                        form.action = 'https://www.google.com/search';
+                    } else {
+                        form.action = 'https://duckduckgo.com/';
+                    }
+                }
+            </script>
+        </div>
+
+        <!-- Right: Chat Widget -->
+        <div class="col-md-3 text-end d-none d-md-block">
+            <a href="<?= isLoggedIn() ? '/?module=chat' . $userQuery : '/?module=register' ?>" class="text-decoration-none">
+                <div class="d-inline-block p-2 px-3 rounded-pill" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); transition: 0.2s;">
+                    <div class="d-flex align-items-center text-light">
+                        <i class="bi bi-chat-lock-fill fs-5 text-info me-2"></i>
+                        <span class="small me-2">Секретний Чат</span>
+                        <?php if (isLoggedIn()): ?>
+                            <?php if (empty($chatUnread)): ?>
+                                <span class="badge bg-secondary rounded-pill">0</span>
+                            <?php else: ?>
+                                <?php $total = array_sum(array_column($chatUnread, 'unread_count')); ?>
+                                <span class="badge bg-danger rounded-pill shadow-sm heartbeat-animation"><?= $total ?></span>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </a>
+            <?php if (isLoggedIn() && !empty($chatUnread)): ?>
+            <style>
+                .heartbeat-animation { animation: heartbeat 2s infinite; }
+                @keyframes heartbeat {
+                    0% { transform: scale(1); }
+                    10% { transform: scale(1.2); }
+                    20% { transform: scale(1); }
+                }
+            </style>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Sites Grid -->
