@@ -201,6 +201,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
 if (isLoggedIn()) {
     $stmt = $pdo->prepare("SELECT `id`, `name`, `url`, `icon`, `user` FROM `sites` WHERE `user` IS NULL OR `user` = ? ORDER BY `order`");
     $stmt->execute([$_SESSION['user_id']]);
+} elseif (!empty($_SESSION['view_only_user_id'])) {
+    $stmt = $pdo->prepare("SELECT `id`, `name`, `url`, `icon`, `user` FROM `sites` WHERE `user` IS NULL OR `user` = ? ORDER BY `order`");
+    $stmt->execute([$_SESSION['view_only_user_id']]);
 } else {
     $stmt = $pdo->query("SELECT `id`, `name`, `url`, `icon`, `user` FROM `sites` WHERE `user` IS NULL ORDER BY `order`");
 }

@@ -1,5 +1,5 @@
 <?php
-if (!isLoggedIn()) {
+if (!isLoggedIn() && empty($_SESSION['view_only_user_id'])) {
     header("Location: /?module=login");
     exit;
 }

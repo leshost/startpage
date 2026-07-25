@@ -76,18 +76,20 @@ try {
     die("Критична помилка підключення до бази даних. Спробуйте пізніше.");
 }
 
-// Auto-login via Secret URL Parameter
+// Auto-login via Secret URL Parameter (Read-Only Mode)
 if (isset($_GET['user']) && !empty($_GET['user'])) {
     $secret = trim($_GET['user']);
-    $stmt = $pdo->prepare("SELECT id, username, is_admin, is_blocked FROM users WHERE secret_key = ?");
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE secret_key = ? AND is_blocked = 0");
     $stmt->execute([$secret]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($user && !$user['is_blocked']) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['secret_key'] = $secret;
-        $_SESSION['is_admin'] = (bool)$user['is_admin'];
+    $userId = $stmt->fetchColumn();
+    
+    if ($userId) {
+        $_SESSION['view_only_user_id'] = $userId;
     }
+    
+    // Redirect to clear the secret from the URL (prevents Referer leaks)
+    header("Location: /");
+    exit;
 }
 
 // Функція перевірки авторизації

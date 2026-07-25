@@ -1,6 +1,6 @@
 <?php
 $current_module = $_GET['module'] ?? 'sites';
-$userQuery = (isLoggedIn() && isset($_SESSION['secret_key'])) ? '&user=' . urlencode($_SESSION['secret_key']) : '';
+$current_module = $_GET['module'] ?? 'sites';
 
 $unreadTotal = 0;
 if (isLoggedIn() && isset($pdo)) {
@@ -13,7 +13,7 @@ if (isLoggedIn() && isset($pdo)) {
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark startpage-navbar">
     <div class="container-fluid">
-        <a class="navbar-brand text-light fw-bold" href="/?module=sites<?= $userQuery ?>"><i class="bi bi-box"></i> Стартова</a>
+        <a class="navbar-brand text-light fw-bold" href="/?module=sites"><i class="bi bi-box"></i> Стартова</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -21,7 +21,7 @@ if (isLoggedIn() && isset($pdo)) {
             <ul class="navbar-nav me-auto">
                 <!-- Головна -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($current_module == 'sites') ? 'active' : '' ?>" href="/?module=sites<?= $userQuery ?>">
+                    <a class="nav-link <?= ($current_module == 'sites') ? 'active' : '' ?>" href="/?module=sites">
                         <i class="bi bi-house-door"></i> Головна
                     </a>
                 </li>
@@ -33,12 +33,12 @@ if (isLoggedIn() && isset($pdo)) {
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark shadow">
                         <li>
-                            <a class="dropdown-item <?= ($current_module == 'kanban') ? 'active' : '' ?>" href="/?module=kanban<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'kanban') ? 'active' : '' ?>" href="/?module=kanban">
                                 <i class="bi bi-kanban"></i> Канбан-дошка
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?= ($current_module == 'finance') ? 'active' : '' ?>" href="/?module=finance<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'finance') ? 'active' : '' ?>" href="/?module=finance">
                                 <i class="bi bi-cash-stack"></i> Калькулятор фінансів
                             </a>
                         </li>
@@ -52,12 +52,12 @@ if (isLoggedIn() && isset($pdo)) {
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark shadow">
                         <li>
-                            <a class="dropdown-item <?= ($current_module == 'pass') ? 'active' : '' ?>" href="/?module=pass<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'pass') ? 'active' : '' ?>" href="/?module=pass">
                                 <i class="bi bi-key"></i> Генератор паролів
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?= ($current_module == 'check') ? 'active' : '' ?>" href="/?module=check<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'check') ? 'active' : '' ?>" href="/?module=check">
                                 <i class="bi bi-shield-check"></i> Перевірка паролів
                             </a>
                         </li>
@@ -71,17 +71,17 @@ if (isLoggedIn() && isset($pdo)) {
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark shadow">
                         <li>
-                            <a class="dropdown-item <?= ($current_module == 'qr') ? 'active' : '' ?>" href="/?module=qr<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'qr') ? 'active' : '' ?>" href="/?module=qr">
                                 <i class="bi bi-qr-code"></i> Генератор QR
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?= ($current_module == 'json') ? 'active' : '' ?>" href="/?module=json<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'json') ? 'active' : '' ?>" href="/?module=json">
                                 <i class="bi bi-braces"></i> JSON Форматер
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?= ($current_module == 'dev-tools') ? 'active' : '' ?>" href="/?module=dev-tools<?= $userQuery ?>">
+                            <a class="dropdown-item <?= ($current_module == 'dev-tools') ? 'active' : '' ?>" href="/?module=dev-tools">
                                 <i class="bi bi-wrench-adjustable"></i> Конвертер / Хеші
                             </a>
                         </li>
@@ -102,7 +102,7 @@ if (isLoggedIn() && isset($pdo)) {
                         <button class="btn btn-sm btn-outline-info me-3" onclick="copySecretUrl('<?= htmlspecialchars($_SESSION['secret_key']) ?>')" title="Копіювати секретний URL">
                             <i class="bi bi-link-45deg"></i> Мій URL
                         </button>
-                        <a href="/?module=chat<?= $userQuery ?>" class="text-secondary text-decoration-none d-flex align-items-center position-relative">
+                        <a href="/?module=chat" class="text-secondary text-decoration-none d-flex align-items-center position-relative">
                             <i class="bi bi-person-circle fs-5 me-2"></i>
                             <span><?= htmlspecialchars($_SESSION['username'] ?? 'Користувач') ?></span>
                             <?php if ($unreadTotal > 0): ?>
