@@ -74,7 +74,8 @@ try {
     $pdo->exec("UPDATE `users` SET `is_admin` = TRUE ORDER BY `id` ASC LIMIT 1");
 
 } catch (PDOException $e) {
-    die("Помилка автоматичного створення таблиць: " . $e->getMessage());
+    error_log("DB Initialization Error: " . $e->getMessage());
+    die("Помилка ініціалізації бази даних. Спробуйте пізніше.");
 }
 
 // AJAX Actions
