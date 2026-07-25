@@ -42,6 +42,23 @@ try {
 try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_blocked` BOOLEAN DEFAULT FALSE"); } catch (PDOException $e) {}
 try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `public_key` TEXT NULL"); } catch (PDOException $e) {}
 try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_key_saved` BOOLEAN DEFAULT FALSE"); } catch (PDOException $e) {}
+// Створюємо таблицю нотаток, якщо потрібно
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `notes` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT NOT NULL,
+            `title` TEXT NOT NULL,
+            `encrypted_content` TEXT NOT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+} catch (PDOException $e) {}
+
+try { $pdo->exec("ALTER TABLE `notes` MODIFY COLUMN `title` TEXT NOT NULL"); } catch (PDOException $e) {}
+
 // ── Обробка форми ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();

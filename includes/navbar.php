@@ -28,7 +28,7 @@ if (isLoggedIn() && isset($pdo)) {
                 
                 <!-- Фінанси -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?= in_array($current_module, ['kanban', 'finance']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle <?= in_array($current_module, ['kanban', 'finance', 'notes']) ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-briefcase"></i> Продуктивність
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark shadow">
@@ -40,6 +40,12 @@ if (isLoggedIn() && isset($pdo)) {
                         <li>
                             <a class="dropdown-item <?= ($current_module == 'finance') ? 'active' : '' ?>" href="/?module=finance">
                                 <i class="bi bi-cash-stack"></i> Калькулятор фінансів
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider border-secondary"></li>
+                        <li>
+                            <a class="dropdown-item <?= ($current_module == 'notes') ? 'active' : '' ?>" href="/?module=notes">
+                                <i class="bi bi-journal-lock"></i> Секретні нотатки (E2EE)
                             </a>
                         </li>
                     </ul>

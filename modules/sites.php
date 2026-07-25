@@ -54,9 +54,22 @@ try {
             FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
             FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+        CREATE TABLE IF NOT EXISTS `notes` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT NOT NULL,
+            `title` TEXT NOT NULL,
+            `encrypted_content` TEXT NOT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 
-    // Міграції для додавання нових колонок
+    // Міграції для додавання нових колонок та зміни типів
+    try {
+        $pdo->exec("ALTER TABLE `notes` MODIFY COLUMN `title` TEXT NOT NULL");
+    } catch (PDOException $e) {}
     try {
         $pdo->exec("ALTER TABLE `users` ADD COLUMN `is_admin` BOOLEAN DEFAULT FALSE");
     } catch (PDOException $e) {}
