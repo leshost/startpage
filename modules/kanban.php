@@ -588,6 +588,34 @@ $pageTitle = 'Канбан-дошка';
 </div>
 
 <script>
+/**
+ * Екранує рядок для безпечної вставки у HTML.
+ * Використовується замість прямого innerHTML з серверними даними.
+ */
+function esc(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(String(str ?? '')));
+    return d.innerHTML;
+}
+
+/**
+ * Безпечно оновлює рядок "| Змінив: X о HH:MM" у .task-meta елементі.
+ * Замість innerHTML-конкатенації — знаходимо/створюємо текстовий вузол.
+ */
+function updateMetaEditor(metaEl, username, time) {
+    // Шукаємо вже існуючий span з редактором
+    let editorSpan = metaEl.querySelector('.meta-editor');
+    const safeText = ' | Змінив: ' + username + ' о ' + time;
+    if (editorSpan) {
+        editorSpan.textContent = safeText; // textContent — завжди безпечний
+    } else {
+        editorSpan = document.createElement('span');
+        editorSpan.className = 'meta-editor';
+        editorSpan.textContent = safeText;
+        metaEl.appendChild(editorSpan);
+    }
+}
+
 // Initialization of Sortable logic
 document.addEventListener("DOMContentLoaded", () => {
     const cols = ['todo', 'in_progress', 'done'];
@@ -647,19 +675,11 @@ function updateTaskStatus(id, status) {
             if (!d.success) {
                 toastr.error('Помилка збереження статусу');
             } else {
-                // Update meta text in the UI
+                // Безпечне оновлення meta "Змінив" — через DOM API, не innerHTML
                 const card = document.querySelector(`.kanban-card[data-id="${id}"]`);
                 if (card && d.updated_by_name) {
-                    let metaEl = card.querySelector('.task-meta');
-                    if (metaEl) {
-                        let text = metaEl.innerHTML;
-                        if (text.includes('| Змінив:')) {
-                            text = text.replace(/\| Змінив:.*$/, `| Змінив: ${d.updated_by_name} о ${d.updated_at}`);
-                        } else {
-                            text += ` | Змінив: ${d.updated_by_name} о ${d.updated_at}`;
-                        }
-                        metaEl.innerHTML = text;
-                    }
+                    const metaEl = card.querySelector('.task-meta');
+                    if (metaEl) updateMetaEditor(metaEl, d.updated_by_name, d.updated_at);
                 }
             }
         })
@@ -685,13 +705,50 @@ document.getElementById('addTaskForm').addEventListener('submit', function(e) {
         .then(d => {
             if (d.success) {
                 const col = document.getElementById('col-todo');
-                const html = `
-                    <div class="kanban-card" data-id="${d.id}">
-                        <span class="kanban-card-text">${d.title}</span>
-                        <button class="btn-delete-task" onclick="deleteTask(this, ${d.id})"><i class="bi bi-trash"></i></button>
-                    </div>
-                `;
-                col.insertAdjacentHTML('beforeend', html);
+
+                // Безпечне створення картки через DOM API (не insertAdjacentHTML з рядком)
+                const card = document.createElement('div');
+                card.className = 'kanban-card flex-column align-items-start';
+                card.setAttribute('data-id', d.id);
+
+                // Рядок заголовка + кнопки
+                const row = document.createElement('div');
+                row.className = 'd-flex w-100 justify-content-between align-items-center';
+
+                const titleSpan = document.createElement('span');
+                titleSpan.className = 'kanban-card-text';
+                titleSpan.textContent = d.title; // textContent — XSS-безпечний
+
+                const btns = document.createElement('div');
+                btns.className = 'd-flex text-nowrap ms-2';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-edit-task';
+                editBtn.title = 'Редагувати';
+                editBtn.innerHTML = '<i class="bi bi-pencil"></i>';
+                editBtn.onclick = function() { editTask(this, d.id); };
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn-delete-task';
+                delBtn.title = 'Видалити';
+                delBtn.innerHTML = '<i class="bi bi-trash"></i>';
+                delBtn.onclick = function() { deleteTask(this, d.id); };
+
+                btns.appendChild(editBtn);
+                btns.appendChild(delBtn);
+                row.appendChild(titleSpan);
+                row.appendChild(btns);
+
+                // Мета-рядок
+                const meta = document.createElement('div');
+                meta.className = 'task-meta w-100 text-muted mt-2';
+                meta.style.fontSize = '0.75rem';
+                meta.textContent = 'Створив: ' + (d.created_by_name || 'Невідомо');
+
+                card.appendChild(row);
+                card.appendChild(meta);
+                col.appendChild(card);
+
                 input.value = '';
                 updateCounters();
             } else {
@@ -795,21 +852,13 @@ window.editTask = function(btn, id) {
         .then(r => r.json())
         .then(d => {
             if (d.success) {
-                textEl.innerText = d.title;
+                textEl.textContent = d.title; // textContent — XSS-безпечний
                 toastr.success('Завдання оновлено');
-                
-                // Update meta text in the UI
+
+                // Безпечне оновлення meta "Змінив" — через DOM API, не innerHTML
                 if (d.updated_by_name) {
-                    let metaEl = card.querySelector('.task-meta');
-                    if (metaEl) {
-                        let text = metaEl.innerHTML;
-                        if (text.includes('| Змінив:')) {
-                            text = text.replace(/\| Змінив:.*$/, `| Змінив: ${d.updated_by_name} о ${d.updated_at}`);
-                        } else {
-                            text += ` | Змінив: ${d.updated_by_name} о ${d.updated_at}`;
-                        }
-                        metaEl.innerHTML = text;
-                    }
+                    const metaEl = card.querySelector('.task-meta');
+                    if (metaEl) updateMetaEditor(metaEl, d.updated_by_name, d.updated_at);
                 }
             } else {
                 toastr.error(d.message || 'Помилка оновлення');
@@ -838,19 +887,37 @@ window.openShareModal = function(projectId) {
             if (d.success) {
                 list.innerHTML = '';
                 if (d.friends.length === 0) {
-                    list.innerHTML = '<div class="text-center text-secondary py-3">Немає друзів у списку контактів.</div>';
+                    list.textContent = 'Немає друзів у списку контактів.';
+                    list.className += ' text-center text-secondary py-3';
                     return;
                 }
+                // Безпечне створення елементів через DOM API — не innerHTML з f.username
                 d.friends.forEach(f => {
                     const isShared = f.is_shared > 0;
-                    list.innerHTML += `
-                        <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center">
-                            <span class="text-light"><i class="bi bi-person-circle text-info me-2"></i> ${f.username}</span>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" onchange="toggleShare(${projectId}, ${f.id}, this)" ${isShared ? 'checked' : ''}>
-                            </div>
-                        </div>
-                    `;
+
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center';
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'text-light';
+                    // Іконка через innerHTML (статичний рядок — безпечно)
+                    nameSpan.innerHTML = '<i class="bi bi-person-circle text-info me-2"></i>';
+                    // Ім'я користувача — через textNode, XSS-захищено
+                    nameSpan.appendChild(document.createTextNode(f.username));
+
+                    const switchDiv = document.createElement('div');
+                    switchDiv.className = 'form-check form-switch';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.className = 'form-check-input';
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = isShared;
+                    checkbox.onchange = function() { toggleShare(projectId, f.id, this); };
+
+                    switchDiv.appendChild(checkbox);
+                    item.appendChild(nameSpan);
+                    item.appendChild(switchDiv);
+                    list.appendChild(item);
                 });
             } else {
                 list.innerHTML = '<div class="text-danger py-3">Помилка завантаження</div>';
