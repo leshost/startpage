@@ -192,5 +192,206 @@ return [
     'err_save' => [
         'ua' => 'Помилка збереження',
         'en' => 'Save error'
+    ],
+    // admin.php
+    'err_block_self' => [
+        'ua' => 'Не можна заблокувати самого себе',
+        'en' => 'You cannot block yourself'
+    ],
+    'err_status_update' => [
+        'ua' => 'Помилка оновлення статусу',
+        'en' => 'Error updating status'
+    ],
+    'err_user_not_found' => [
+        'ua' => 'Користувача не знайдено',
+        'en' => 'User not found'
+    ],
+    'err_reg_open_no_invites' => [
+        'ua' => 'Реєстрація відкрита — запрошення не потрібні',
+        'en' => 'Registration is open — invites are not needed'
+    ],
+    'err_generation' => [
+        'ua' => 'Помилка генерації',
+        'en' => 'Generation error'
+    ],
+    'admin_panel_title' => [
+        'ua' => 'Панель Адміністратора',
+        'en' => 'Administrator Panel'
+    ],
+    'admin_panel_desc' => [
+        'ua' => 'Управління користувачами та спільними сайтами',
+        'en' => 'User and Shared Sites Management'
+    ],
+    'tab_users' => [
+        'ua' => 'Користувачі',
+        'en' => 'Users'
+    ],
+    'tab_shared_sites' => [
+        'ua' => 'Спільні сайти',
+        'en' => 'Shared Sites'
+    ],
+    'tab_invites' => [
+        'ua' => 'Запрошення',
+        'en' => 'Invites'
+    ],
+    'th_login' => [
+        'ua' => 'Логін',
+        'en' => 'Login'
+    ],
+    'th_role' => [
+        'ua' => 'Роль',
+        'en' => 'Role'
+    ],
+    'th_reg_date' => [
+        'ua' => 'Дата реєстрації',
+        'en' => 'Registration Date'
+    ],
+    'th_status' => [
+        'ua' => 'Статус',
+        'en' => 'Status'
+    ],
+    'th_actions' => [
+        'ua' => 'Дії',
+        'en' => 'Actions'
+    ],
+    'role_admin' => [
+        'ua' => 'Адмін',
+        'en' => 'Admin'
+    ],
+    'role_user' => [
+        'ua' => 'Користувач',
+        'en' => 'User'
+    ],
+    'status_blocked' => [
+        'ua' => 'Заблокований',
+        'en' => 'Blocked'
+    ],
+    'status_active' => [
+        'ua' => 'Активний',
+        'en' => 'Active'
+    ],
+    'btn_unblock' => [
+        'ua' => 'Розблокувати',
+        'en' => 'Unblock'
+    ],
+    'btn_block' => [
+        'ua' => 'Заблокувати',
+        'en' => 'Block'
+    ],
+    'add_shared_site_title' => [
+        'ua' => 'Додати спільний сайт',
+        'en' => 'Add Shared Site'
+    ],
+    'label_name' => [
+        'ua' => 'Назва',
+        'en' => 'Name'
+    ],
+    'label_url' => [
+        'ua' => 'URL',
+        'en' => 'URL'
+    ],
+    'label_icon_url' => [
+        'ua' => 'URL іконки',
+        'en' => 'Icon URL'
+    ],
+    'list_shared_sites' => [
+        'ua' => 'Список спільних сайтів',
+        'en' => 'List of Shared Sites'
+    ],
+    'th_icon' => [
+        'ua' => 'Іконка',
+        'en' => 'Icon'
+    ],
+    'th_name' => [
+        'ua' => 'Назва',
+        'en' => 'Name'
+    ],
+    'th_url' => [
+        'ua' => 'URL',
+        'en' => 'URL'
+    ],
+    'generate_code_title' => [
+        'ua' => 'Генерація коду',
+        'en' => 'Generate Code'
+    ],
+    'generate_code_desc' => [
+        'ua' => 'Реєстрація закрита. Надайте код запрошення довіреній особі — він діє один раз.',
+        'en' => 'Registration is closed. Provide the invite code to a trusted person — it is valid for one use.'
+    ],
+    'btn_generate_code' => [
+        'ua' => 'Згенерувати код',
+        'en' => 'Generate Code'
+    ],
+    'label_new_code' => [
+        'ua' => 'Новий код:',
+        'en' => 'New Code:'
+    ],
+    'title_copy' => [
+        'ua' => 'Копіювати',
+        'en' => 'Copy'
+    ],
+    'list_invite_codes' => [
+        'ua' => 'Список кодів запрошень',
+        'en' => 'List of Invite Codes'
+    ],
+    'th_code' => [
+        'ua' => 'Код',
+        'en' => 'Code'
+    ],
+    'th_created' => [
+        'ua' => 'Створено',
+        'en' => 'Created'
+    ],
+    'th_used' => [
+        'ua' => 'Використано',
+        'en' => 'Used'
+    ],
+    'status_not_used' => [
+        'ua' => 'Не використано',
+        'en' => 'Not used'
+    ],
+    'msg_no_codes' => [
+        'ua' => 'Кодів ще немає',
+        'en' => 'No codes yet'
+    ],
+    'msg_status_updated' => [
+        'ua' => 'Статус оновлено',
+        'en' => 'Status updated'
+    ],
+    'err_general' => [
+        'ua' => 'Помилка',
+        'en' => 'Error'
+    ],
+    'msg_saved_reload' => [
+        'ua' => 'Успішно збережено! Сторінка оновиться.',
+        'en' => 'Successfully saved! Page will reload.'
+    ],
+    'msg_confirm_delete_shared' => [
+        'ua' => 'Ви впевнені, що хочете видалити цей спільний сайт?',
+        'en' => 'Are you sure you want to delete this shared site?'
+    ],
+    'msg_deleted_success' => [
+        'ua' => 'Видалено успішно!',
+        'en' => 'Deleted successfully!'
+    ],
+    'msg_code_generated' => [
+        'ua' => 'Код згенеровано!',
+        'en' => 'Code generated!'
+    ],
+    'err_network' => [
+        'ua' => 'Мережева помилка',
+        'en' => 'Network error'
+    ],
+    'msg_code_copied' => [
+        'ua' => 'Код скопійовано!',
+        'en' => 'Code copied!'
+    ],
+    'msg_confirm_revoke_invite' => [
+        'ua' => 'Анулювати цей код запрошення?',
+        'en' => 'Revoke this invite code?'
+    ],
+    'msg_invite_revoked' => [
+        'ua' => 'Код анульовано',
+        'en' => 'Code revoked'
     ]
 ];
