@@ -113,7 +113,7 @@ try {
 // AJAX Actions
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     if (!isLoggedIn()) {
-        echo json_encode(['success' => false, 'message' => 'Несанкціонований доступ']);
+        echo json_encode(['success' => false, 'message' => __('err_unauthorized')]);
         exit();
     }
     verifyCsrf();
@@ -125,10 +125,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
             if ($stmt->rowCount() > 0) {
                 echo json_encode(['success' => true]);
             } else {
-                echo json_encode(['success' => false, 'message' => 'Немає прав на видалення або сайт не знайдено']);
+                echo json_encode(['success' => false, 'message' => __('err_no_delete_perms')]);
             }
         } else {
-            echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
+            echo json_encode(['success' => false, 'message' => __('err_db')]);
         }
         exit();
     }
@@ -137,7 +137,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     if ($_POST['action'] === 'add' && isset($_POST['name'], $_POST['url'])) {
         $url = trim($_POST['url']);
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            echo json_encode(['success' => false, 'message' => 'Некоректний URL']);
+            echo json_encode(['success' => false, 'message' => __('err_invalid_url')]);
             exit();
         }
         
@@ -163,7 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
                 'icon' => htmlspecialchars($icon)
             ]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
+            echo json_encode(['success' => false, 'message' => __('err_db')]);
         }
         exit();
     }
@@ -172,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     if ($_POST['action'] === 'edit' && isset($_POST['id'], $_POST['name'], $_POST['url'])) {
         $url = trim($_POST['url']);
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            echo json_encode(['success' => false, 'message' => 'Некоректний URL']);
+            echo json_encode(['success' => false, 'message' => __('err_invalid_url')]);
             exit();
         }
 
@@ -199,7 +199,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
                 'icon' => htmlspecialchars($icon)
             ]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Помилка бази даних']);
+            echo json_encode(['success' => false, 'message' => __('err_db')]);
         }
         exit();
     }
@@ -223,7 +223,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
             }
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Невірний формат даних']);
+            echo json_encode(['success' => false, 'message' => __('err_invalid_data')]);
         }
         exit();
     }
@@ -317,7 +317,7 @@ body.edit-mode-active .site-item:active {
         <div class="col-md-6 text-center">
             <form action="https://duckduckgo.com/" method="GET" target="_blank" id="searchForm" class="d-flex justify-content-center">
                 <div class="input-group" style="max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-radius: 20px;">
-                    <input type="text" name="q" class="form-control bg-dark text-light border-secondary form-control-lg px-4" placeholder="Пошук..." required autofocus style="border: none; border-top-left-radius: 20px; border-bottom-left-radius: 20px;">
+                    <input type="text" name="q" class="form-control bg-dark text-light border-secondary form-control-lg px-4" placeholder="<?= __('search_placeholder') ?>" required autofocus style="border: none; border-top-left-radius: 20px; border-bottom-left-radius: 20px;">
                     
                     <button class="btn btn-dark border-start border-secondary dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="searchEngineBtn">
                         🦆
@@ -353,7 +353,7 @@ body.edit-mode-active .site-item:active {
                 <div class="d-inline-block p-2 px-3 rounded-pill" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); transition: 0.2s;">
                     <div class="d-flex align-items-center text-light">
                         <i class="bi bi-chat-lock-fill fs-5 text-info me-2"></i>
-                        <span class="small me-2">Секретний Чат</span>
+                        <span class="small me-2"><?= __('secret_chat') ?></span>
                         <?php if (isLoggedIn()): ?>
                             <?php if (empty($chatUnread)): ?>
                                 <span class="badge bg-secondary rounded-pill">0</span>
@@ -402,21 +402,21 @@ body.edit-mode-active .site-item:active {
     <!-- Admin Panel: Add Site -->
     <?php if (isLoggedIn()): ?>
         <div class="mt-5 p-4 tool-box w-100 d-none edit-element" id="adminPanel" style="max-width: 500px;">
-            <h4 class="mb-3" id="formTitle"><i class="bi bi-plus-circle"></i> Додати сайт</h4>
+            <h4 class="mb-3" id="formTitle"><i class="bi bi-plus-circle"></i> <?= __('btn_add_site') ?></h4>
             <form id="addSiteForm">
                 <input type="hidden" id="editSiteId" value="">
                 <div class="mb-3">
-                    <input type="text" id="addName" class="form-control" placeholder="Назва" required>
+                    <input type="text" id="addName" class="form-control" placeholder="<?= __('placeholder_name') ?>" required>
                 </div>
                 <div class="mb-3">
-                    <input type="url" id="addUrl" class="form-control" placeholder="URL" required>
+                    <input type="url" id="addUrl" class="form-control" placeholder="<?= __('placeholder_url') ?>" required>
                 </div>
                 <div class="mb-3">
-                    <input type="text" id="addIcon" class="form-control" placeholder="URL іконки (необов'язково)">
-                    <div class="form-text text-secondary small">Якщо залишити порожнім, іконка підтягнеться автоматично.</div>
+                    <input type="text" id="addIcon" class="form-control" placeholder="<?= __('placeholder_icon') ?>">
+                    <div class="form-text text-secondary small"><?= __('msg_icon_auto') ?></div>
                 </div>
-                <button type="submit" id="formSubmitBtn" class="btn btn-success w-100">Додати сайт</button>
-                <button type="button" id="cancelEditBtn" class="btn btn-secondary w-100 mt-2 d-none">Скасувати редагування</button>
+                <button type="submit" id="formSubmitBtn" class="btn btn-success w-100"><?= __('btn_add_site') ?></button>
+                <button type="button" id="cancelEditBtn" class="btn btn-secondary w-100 mt-2 d-none"><?= __('btn_cancel_edit') ?></button>
             </form>
         </div>
     <?php endif; ?>
@@ -448,7 +448,7 @@ if (container) {
             })
             .then(res => res.json())
             .then(data => {
-                if (!data.success) toastr.error(data.message || 'Помилка збереження порядку');
+                if (!data.success) toastr.error(data.message || '<?= __('err_save_order') ?>');
             })
             .catch(err => console.error(err));
         }
@@ -472,7 +472,7 @@ document.getElementById('editModeToggle')?.addEventListener('change', function()
 // Delete Site AJAX
 function deleteSite(event, id) {
     event.preventDefault();
-    if (!confirm('Ви впевнені, що хочете видалити цей сайт?')) return;
+    if (!confirm('<?= __('msg_confirm_delete') ?>')) return;
     
     const formData = new FormData();
     formData.append('action', 'delete');
@@ -485,10 +485,10 @@ function deleteSite(event, id) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            toastr.success('Сайт видалено!');
+            toastr.success('<?= __('msg_site_deleted') ?>');
             document.querySelector(`.site-item[data-id="${id}"]`).remove();
         } else {
-            toastr.error(data.message || 'Помилка видалення');
+            toastr.error(data.message || '<?= __('err_delete') ?>');
         }
     })
     .catch(err => console.error(err));
@@ -523,8 +523,8 @@ document.getElementById('sites-container')?.addEventListener('click', function(e
     document.getElementById('addIcon').value = icon;
 
     // Change form appearance
-    document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Редагувати сайт';
-    document.getElementById('formSubmitBtn').innerText = 'Зберегти зміни';
+    document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square"></i> <?= __('btn_edit_site') ?>';
+    document.getElementById('formSubmitBtn').innerText = '<?= __('btn_save_changes') ?>';
     document.getElementById('formSubmitBtn').classList.replace('btn-success', 'btn-primary');
     document.getElementById('cancelEditBtn').classList.remove('d-none');
 
@@ -537,8 +537,8 @@ document.getElementById('cancelEditBtn')?.addEventListener('click', function() {
     document.getElementById('addSiteForm').reset();
     document.getElementById('editSiteId').value = '';
     
-    document.getElementById('formTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Додати сайт';
-    document.getElementById('formSubmitBtn').innerText = 'Додати сайт';
+    document.getElementById('formTitle').innerHTML = '<i class="bi bi-plus-circle"></i> <?= __('btn_add_site') ?>';
+    document.getElementById('formSubmitBtn').innerText = '<?= __('btn_add_site') ?>';
     document.getElementById('formSubmitBtn').classList.replace('btn-primary', 'btn-success');
     this.classList.add('d-none');
 });
@@ -565,7 +565,7 @@ document.getElementById('addSiteForm')?.addEventListener('submit', function(e) {
     .then(data => {
         if (data.success) {
             if (action === 'add') {
-                toastr.success('Сайт додано!');
+                toastr.success('<?= __('msg_site_added') ?>');
                 
                 const container = document.getElementById('sites-container');
                 const toggleElement = document.getElementById('editModeToggle');
@@ -588,7 +588,7 @@ document.getElementById('addSiteForm')?.addEventListener('submit', function(e) {
                 container.insertAdjacentHTML('beforeend', newSiteHTML);
                 document.getElementById('addSiteForm').reset();
             } else {
-                toastr.success('Сайт оновлено!');
+                toastr.success('<?= __('msg_site_updated') ?>');
                 const siteItem = document.querySelector(`.site-item[data-id="${data.id}"]`);
                 if (siteItem) {
                     const link = siteItem.querySelector('a');
@@ -599,7 +599,7 @@ document.getElementById('addSiteForm')?.addEventListener('submit', function(e) {
                 document.getElementById('cancelEditBtn').click(); // Reset form
             }
         } else {
-            toastr.error(data.message || 'Помилка збереження');
+            toastr.error(data.message || '<?= __('err_save') ?>');
         }
     })
     .catch(err => console.error(err));

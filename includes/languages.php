@@ -103,5 +103,94 @@ return [
     'footer_license' => [
         'ua' => 'Ліцензія',
         'en' => 'License'
+    ],
+    // sites.php
+    'err_unauthorized' => [
+        'ua' => 'Несанкціонований доступ',
+        'en' => 'Unauthorized access'
+    ],
+    'err_no_delete_perms' => [
+        'ua' => 'Немає прав на видалення або сайт не знайдено',
+        'en' => 'No permission to delete or site not found'
+    ],
+    'err_db' => [
+        'ua' => 'Помилка бази даних',
+        'en' => 'Database error'
+    ],
+    'err_invalid_url' => [
+        'ua' => 'Некоректний URL',
+        'en' => 'Invalid URL'
+    ],
+    'err_invalid_data' => [
+        'ua' => 'Невірний формат даних',
+        'en' => 'Invalid data format'
+    ],
+    'search_placeholder' => [
+        'ua' => 'Пошук...',
+        'en' => 'Search...'
+    ],
+    'secret_chat' => [
+        'ua' => 'Секретний Чат',
+        'en' => 'Secret Chat'
+    ],
+    'btn_add_site' => [
+        'ua' => 'Додати сайт',
+        'en' => 'Add Site'
+    ],
+    'placeholder_name' => [
+        'ua' => 'Назва',
+        'en' => 'Name'
+    ],
+    'placeholder_url' => [
+        'ua' => 'URL',
+        'en' => 'URL'
+    ],
+    'placeholder_icon' => [
+        'ua' => 'URL іконки (необов\'язково)',
+        'en' => 'Icon URL (optional)'
+    ],
+    'msg_icon_auto' => [
+        'ua' => 'Якщо залишити порожнім, іконка підтягнеться автоматично.',
+        'en' => 'If left blank, the icon will be fetched automatically.'
+    ],
+    'btn_cancel_edit' => [
+        'ua' => 'Скасувати редагування',
+        'en' => 'Cancel Edit'
+    ],
+    'err_save_order' => [
+        'ua' => 'Помилка збереження порядку',
+        'en' => 'Error saving order'
+    ],
+    'msg_confirm_delete' => [
+        'ua' => 'Ви впевнені, що хочете видалити цей сайт?',
+        'en' => 'Are you sure you want to delete this site?'
+    ],
+    'msg_site_deleted' => [
+        'ua' => 'Сайт видалено!',
+        'en' => 'Site deleted!'
+    ],
+    'err_delete' => [
+        'ua' => 'Помилка видалення',
+        'en' => 'Delete error'
+    ],
+    'btn_edit_site' => [
+        'ua' => 'Редагувати сайт',
+        'en' => 'Edit Site'
+    ],
+    'btn_save_changes' => [
+        'ua' => 'Зберегти зміни',
+        'en' => 'Save Changes'
+    ],
+    'msg_site_added' => [
+        'ua' => 'Сайт додано!',
+        'en' => 'Site added!'
+    ],
+    'msg_site_updated' => [
+        'ua' => 'Сайт оновлено!',
+        'en' => 'Site updated!'
+    ],
+    'err_save' => [
+        'ua' => 'Помилка збереження',
+        'en' => 'Save error'
     ]
 ];
