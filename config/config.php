@@ -1,7 +1,7 @@
 <?php
 // Жорсткі налаштування безпеки для сесійних Cookie
 session_set_cookie_params([
-    'lifetime' => 0,
+    'lifetime' => 60 * 60 * 24 * 30, // 30 днів
     'path' => '/',
     'domain' => $_SERVER['HTTP_HOST'] ?? '',
     'secure' => true,         // Тільки через HTTPS

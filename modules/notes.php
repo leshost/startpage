@@ -175,6 +175,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['action'])) {
         height: 100%;
         color: #6c757d;
     }
+
+    .markdown-helper {
+        width: 250px;
+        background: #2a2a2a;
+        border-left: 1px solid #3d3d3d;
+        padding: 15px;
+        color: #ddd;
+        overflow-y: auto;
+    }
+    .markdown-helper h6 { color: #fff; margin-top: 15px; font-size: 0.9rem; }
+    .markdown-helper code { background: #1e1e1e; padding: 2px 4px; border-radius: 4px; color: #e83e8c; font-size: 0.85rem;}
+    
+    @media (max-width: 768px) {
+        .notes-container {
+            flex-direction: column;
+            height: auto;
+            min-height: calc(100vh - 70px);
+            overflow: visible;
+        }
+        .notes-sidebar {
+            width: 100%;
+            height: 250px;
+            border-right: none;
+            border-bottom: 1px solid #3d3d3d;
+        }
+        .notes-main {
+            height: 500px;
+        }
+        .markdown-helper {
+            width: 100%;
+            height: auto;
+            border-left: none;
+            border-top: 1px solid #3d3d3d;
+        }
+    }
     
     /* Модальне вікно для пароля */
     #unlockModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1050; align-items: center; justify-content: center; }
@@ -206,7 +241,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['action'])) {
                 <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-outline-secondary" id="btnEdit" onclick="switchTab('edit')"><i class="bi bi-pencil"></i></button>
                     <button class="btn btn-sm btn-outline-info" id="btnPreview" onclick="switchTab('preview')"><i class="bi bi-eye"></i></button>
-                    <button class="btn btn-sm btn-success" id="btnSave" onclick="saveNote()"><i class="bi bi-save"></i> Зберегти</button>
+                    <button class="btn btn-sm btn-success" id="btnSave" onclick="saveNote()"><i class="bi bi-save"></i></button>
                     <button class="btn btn-sm btn-danger" onclick="deleteCurrentNote()"><i class="bi bi-trash"></i></button>
                 </div>
             </div>
@@ -215,6 +250,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['action'])) {
                 <div id="notePreviewContent" class="note-preview"></div>
             </div>
         </div>
+    </div>
+
+    <!-- Markdown Helper -->
+    <div class="markdown-helper d-none d-md-block" id="markdownHelper">
+        <h5 class="text-white border-bottom pb-2 mb-3"><i class="bi bi-info-circle text-info me-2"></i>Markdown</h5>
+        <p class="small text-muted mb-2">Основні команди форматування:</p>
+        
+        <h6>Заголовки</h6>
+        <code># Заголовок 1</code><br>
+        <code>## Заголовок 2</code>
+        
+        <h6>Текст</h6>
+        <code>**Жирний**</code><br>
+        <code>*Курсив*</code><br>
+        <code>~~Закреслений~~</code>
+        
+        <h6>Списки</h6>
+        <code>- Пункт 1</code><br>
+        <code>- Пункт 2</code><br>
+        <code>1. Нумерований</code>
+        
+        <h6>Код та посилання</h6>
+        <code>`Код`</code><br>
+        <code>[Текст](URL)</code>
     </div>
 </div>
 
@@ -365,17 +424,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['action'])) {
         const data = await res.json();
         if(data.success) {
             await loadNotes();
-            openNote(data.id);
+            openNote(data.id, true);
         }
     }
 
-    async function openNote(id) {
+    async function openNote(id, isNew = false) {
         if (isUnsaved && !confirm("У вас є незбережені зміни. Продовжити без збереження?")) return;
         
         currentNoteId = id;
         document.getElementById('emptyState').style.display = 'none';
         document.getElementById('noteEditor').style.display = 'flex';
-        switchTab('edit');
+        
         isUnsaved = false;
         document.getElementById('btnSave').classList.replace('btn-warning', 'btn-success');
         
@@ -390,6 +449,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET['action'])) {
             } else {
                 document.getElementById('noteContent').value = '';
             }
+            switchTab(isNew ? 'edit' : 'preview');
             await loadNotes(); // Щоб оновити активний стан в списку
         }
     }

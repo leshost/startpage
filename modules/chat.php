@@ -488,7 +488,7 @@ $pageTitle = 'Секретний Чат';
         let currentContactPubKey = null;
         let decryptedPrivKey = null; 
         let inactivityTimer;
-        const INACTIVITY_LIMIT = 5 * 60 * 1000;
+        const INACTIVITY_LIMIT = 24 * 60 * 60 * 1000; // 24 години
         let unlockModal;
 
         function lockChat() {
