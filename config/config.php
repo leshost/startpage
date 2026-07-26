@@ -96,4 +96,32 @@ if (isset($_GET['user']) && !empty($_GET['user'])) {
 function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }
+
+// Багатомовність (i18n)
+if (isset($_GET['language'])) {
+    $lang = in_array($_GET['language'], ['ua', 'en']) ? $_GET['language'] : 'ua';
+    $_SESSION['language'] = $lang;
+    setcookie('language', $lang, time() + 60 * 60 * 24 * 30, '/');
+    
+    // Редирект для очищення URL
+    $url = $_SERVER['REQUEST_URI'];
+    $url = preg_replace('/([?&])language=[^&]*(&|$)/', '$1', $url);
+    $url = rtrim($url, '?&');
+    header("Location: $url");
+    exit;
+}
+
+// Визначення поточної мови
+if (isset($_SESSION['language'])) {
+    $currentLang = $_SESSION['language'];
+} elseif (isset($_COOKIE['language'])) {
+    $currentLang = $_COOKIE['language'];
+} else {
+    $currentLang = 'ua';
+}
+define('CURRENT_LANG', $currentLang);
+
+// Завантаження масиву перекладів
+global $translations;
+$translations = require_once __DIR__ . '/../includes/languages.php';
 ?>

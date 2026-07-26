@@ -2,15 +2,15 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4 text-md-start mb-2 mb-md-0">
-                    <small>&copy; <?= date('Y') ?> Startpage Tools. Версія 2.2.0</small>
+                    <small>&copy; <?= date('Y') ?> Startpage Tools. <?= __('footer_version') ?> 2.2.0</small>
                 </div>
                 <div class="col-md-4 mb-2 mb-md-0">
                     <a href="https://github.com/leshost/startpage" target="_blank" class="text-secondary text-decoration-none">
-                        <i class="bi bi-github fs-5"></i> GitHub Репозиторій
+                        <i class="bi bi-github fs-5"></i> <?= __('footer_github') ?>
                     </a>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <small>Ліцензія <a href="https://opensource.org/licenses/MIT" target="_blank" class="text-secondary">MIT (Open Source)</a></small>
+                    <small><?= __('footer_license') ?> <a href="https://opensource.org/licenses/MIT" target="_blank" class="text-secondary">MIT (Open Source)</a></small>
                 </div>
             </div>
         </div>

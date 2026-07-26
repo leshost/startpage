@@ -1,5 +1,23 @@
 <?php
 
+/**
+ * Отримує переклад за ключем для поточної мови.
+ * @param string $key Ключ перекладу
+ * @return string
+ */
+function __($key) {
+    global $translations;
+    $lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'ua';
+    if (isset($translations[$key][$lang])) {
+        return $translations[$key][$lang];
+    }
+    // Фолбек на українську, якщо переклад відсутній, або повертаємо сам ключ
+    if (isset($translations[$key]['ua'])) {
+        return $translations[$key]['ua'];
+    }
+    return $key;
+}
+
 function getUserIP() {
     // Оскільки використовується Cloudflare, це єдиний надійний і безпечний заголовок
     if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {

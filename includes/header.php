@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk" data-bs-theme="dark">
+<html lang="<?= defined('CURRENT_LANG') ? CURRENT_LANG : 'uk' ?>" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
