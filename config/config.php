@@ -6,7 +6,7 @@ session_set_cookie_params([
     'domain' => $_SERVER['HTTP_HOST'] ?? '',
     'secure' => true,         // Тільки через HTTPS
     'httponly' => true,       // Заборона доступу через JS (захист від XSS)
-    'samesite' => 'Strict'    // Захист від міжсайтових атак (CSRF)
+    'samesite' => 'Lax'       // Захист від міжсайтових атак (CSRF)
 ]);
 session_start();
 
