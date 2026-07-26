@@ -393,5 +393,182 @@ return [
     'msg_invite_revoked' => [
         'ua' => 'Код анульовано',
         'en' => 'Code revoked'
+    ],
+    // chat.php
+    'err_add_self' => [
+        'ua' => 'Ви не можете додати самі себе',
+        'en' => 'You cannot add yourself'
+    ],
+    'err_req_sent_or_friends' => [
+        'ua' => 'Заявка вже відправлена або ви вже друзі',
+        'en' => 'Request already sent or you are already friends'
+    ],
+    'err_only_friends' => [
+        'ua' => 'Можна надсилати повідомлення тільки друзям',
+        'en' => 'You can only send messages to friends'
+    ],
+    'e2ee_init_title' => [
+        'ua' => 'Ініціалізація E2EE',
+        'en' => 'E2EE Initialization'
+    ],
+    'e2ee_init_desc' => [
+        'ua' => 'Ваш акаунт ще не налаштовано для захищеного чату. Нам потрібно згенерувати унікальну пару ключів для наскрізного шифрування ваших повідомлень.',
+        'en' => 'Your account is not yet configured for secure chat. We need to generate a unique key pair for end-to-end encryption of your messages.'
+    ],
+    'label_master_pwd' => [
+        'ua' => 'Придумайте майстер-пароль',
+        'en' => 'Create a master password'
+    ],
+    'placeholder_master_pwd' => [
+        'ua' => 'Буде використано для захисту ключів',
+        'en' => 'Will be used to protect keys'
+    ],
+    'msg_pwd_required_every_time' => [
+        'ua' => 'Цей пароль потрібен буде кожного разу, коли ви відкриваєте чат.',
+        'en' => 'This password will be required every time you open the chat.'
+    ],
+    'btn_generate_keys' => [
+        'ua' => 'Згенерувати ключі',
+        'en' => 'Generate keys'
+    ],
+    'warning_critical' => [
+        'ua' => 'КРИТИЧНО ВАЖЛИВО!',
+        'en' => 'CRITICAL WARNING!'
+    ],
+    'msg_key_not_saved' => [
+        'ua' => 'Ви ще не зберегли свій приватний ключ. Збережіть його просто зараз, щоб не втратити доступ!',
+        'en' => 'You haven\'t saved your private key yet. Save it right now to avoid losing access!'
+    ],
+    'btn_save_key' => [
+        'ua' => 'Зберегти ключ',
+        'en' => 'Save key'
+    ],
+    'tab_contacts' => [
+        'ua' => 'Контакти',
+        'en' => 'Contacts'
+    ],
+    'placeholder_username' => [
+        'ua' => 'Логін користувача',
+        'en' => 'Username'
+    ],
+    'title_key_management' => [
+        'ua' => 'Управління ключем',
+        'en' => 'Key management'
+    ],
+    'btn_download_backup' => [
+        'ua' => 'Завантажити бекап ключа',
+        'en' => 'Download key backup'
+    ],
+    'btn_restore_from_file' => [
+        'ua' => 'Відновити з файлу',
+        'en' => 'Restore from file'
+    ],
+    'msg_select_contact' => [
+        'ua' => 'Оберіть контакт для початку розмови',
+        'en' => 'Select a contact to start a conversation'
+    ],
+    'placeholder_encrypted_msg' => [
+        'ua' => 'Зашифроване повідомлення...',
+        'en' => 'Encrypted message...'
+    ],
+    'title_unlock_access' => [
+        'ua' => 'Розблокувати доступ',
+        'en' => 'Unlock access'
+    ],
+    'msg_enter_master_pwd' => [
+        'ua' => 'Ваші повідомлення наскрізно зашифровані. Введіть майстер-пароль, щоб розшифрувати приватний ключ у браузері.',
+        'en' => 'Your messages are end-to-end encrypted. Enter your master password to decrypt the private key in your browser.'
+    ],
+    'placeholder_master_pwd_short' => [
+        'ua' => 'Майстер-пароль',
+        'en' => 'Master password'
+    ],
+    'btn_unlock' => [
+        'ua' => 'Розблокувати',
+        'en' => 'Unlock'
+    ],
+    'err_pwd_too_short' => [
+        'ua' => 'Пароль занадто короткий',
+        'en' => 'Password is too short'
+    ],
+    'msg_security_check' => [
+        'ua' => 'Перевірка безпеки...',
+        'en' => 'Security check...'
+    ],
+    'msg_pwd_leaked_1' => [
+        'ua' => 'Цей пароль був знайдений у витоках даних (',
+        'en' => 'This password was found in data breaches ('
+    ],
+    'msg_pwd_leaked_2' => [
+        'ua' => ' разів). Використовувати його небезпечно!',
+        'en' => ' times). It is unsafe to use!'
+    ],
+    'msg_pwd_safe' => [
+        'ua' => 'Пароль надійний!',
+        'en' => 'Password is safe!'
+    ],
+    'err_pwd_check_failed' => [
+        'ua' => 'Не вдалося перевірити пароль.',
+        'en' => 'Failed to check the password.'
+    ],
+    'msg_generating' => [
+        'ua' => 'Генеруємо...',
+        'en' => 'Generating...'
+    ],
+    'msg_keys_generated_success' => [
+        'ua' => 'Ключі успішно згенеровано!',
+        'en' => 'Keys successfully generated!'
+    ],
+    'err_save_keys_server' => [
+        'ua' => 'Помилка збереження ключів на сервері.',
+        'en' => 'Error saving keys on the server.'
+    ],
+    'err_keys_creation' => [
+        'ua' => 'Помилка при створенні ключів.',
+        'en' => 'Error generating keys.'
+    ],
+    'msg_enter_pwd_unlock' => [
+        'ua' => 'Введіть майстер-пароль, щоб розблокувати чат.',
+        'en' => 'Enter master password to unlock chat.'
+    ],
+    'msg_key_missing_import' => [
+        'ua' => 'Ключ відсутній у браузері! Імпортуйте файл ключа.',
+        'en' => 'Key is missing in browser! Import the key file.'
+    ],
+    'msg_chat_unlocked' => [
+        'ua' => 'Чат успішно розблоковано',
+        'en' => 'Chat successfully unlocked'
+    ],
+    'err_invalid_master_pwd' => [
+        'ua' => 'Невірний майстер-пароль!',
+        'en' => 'Invalid master password!'
+    ],
+    'err_no_key_to_export' => [
+        'ua' => 'Немає ключа для експорту.',
+        'en' => 'No key to export.'
+    ],
+    'msg_file_unencrypted_enter_pwd' => [
+        'ua' => 'Файл містить незашифрований ключ. Введіть майстер-пароль для захисту:',
+        'en' => 'The file contains an unencrypted key. Enter a master password to protect it:'
+    ],
+    'msg_chat_locked' => [
+        'ua' => '[Чат заблоковано]',
+        'en' => '[Chat is locked]'
+    ],
+    'err_decryption' => [
+        'ua' => '[Помилка дешифрування]',
+        'en' => '[Decryption error]'
+    ],
+    'chat_with' => [
+        'ua' => 'Чат з ',
+        'en' => 'Chat with '
+    ],
+    'msg_req_sent' => [
+        'ua' => 'Заявку відправлено!',
+        'en' => 'Request sent!'
+    ],
+    'msg_new_requests' => [
+        'ua' => 'Нові заявки:',
+        'en' => 'New requests:'
     ]
 ];

@@ -72,7 +72,7 @@ if ($action) {
                 'public_key'  => $user['public_key']
             ]);
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'User not found']);
+            echo json_encode(['status' => 'error', 'message' => __('err_user_not_found')]);
         }
         exit;
     }
@@ -90,7 +90,7 @@ if ($action) {
         $username = trim($data['username'] ?? '');
         
         if ($username === $_SESSION['username']) {
-            echo json_encode(['status' => 'error', 'message' => 'Ви не можете додати самі себе']);
+            echo json_encode(['status' => 'error', 'message' => __('err_add_self')]);
             exit;
         }
         
@@ -99,7 +99,7 @@ if ($action) {
         $friend = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$friend) {
-            echo json_encode(['status' => 'error', 'message' => 'Користувача не знайдено']);
+            echo json_encode(['status' => 'error', 'message' => __('err_user_not_found')]);
             exit;
         }
         
@@ -110,7 +110,7 @@ if ($action) {
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($existing) {
-            echo json_encode(['status' => 'error', 'message' => 'Заявка вже відправлена або ви вже друзі']);
+            echo json_encode(['status' => 'error', 'message' => __('err_req_sent_or_friends')]);
             exit;
         }
         
@@ -171,7 +171,7 @@ if ($action) {
         $stmt = $pdo->prepare("SELECT 1 FROM friends WHERE ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)) AND status = 'accepted'");
         $stmt->execute([$myId, $receiverId, $receiverId, $myId]);
         if (!$stmt->fetchColumn()) {
-            echo json_encode(['status' => 'error', 'message' => 'Можна надсилати повідомлення тільки друзям']);
+            echo json_encode(['status' => 'error', 'message' => __('err_only_friends')]);
             exit;
         }
 
@@ -224,7 +224,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 $isInitialized = !empty($user['public_key']);
 $isKeySaved = $user['is_key_saved'] ?? true;
 
-$pageTitle = 'Секретний Чат';
+$pageTitle = __('secret_chat');
 ?>
 
 <div class="container py-5">
@@ -232,22 +232,22 @@ $pageTitle = 'Секретний Чат';
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="tool-box text-center">
-                    <h3 class="mb-4 text-warning"><i class="bi bi-shield-lock"></i> Ініціалізація E2EE</h3>
-                    <p class="text-light mb-4">Ваш акаунт ще не налаштовано для захищеного чату. Нам потрібно згенерувати унікальну пару ключів для наскрізного шифрування ваших повідомлень.</p>
+                    <h3 class="mb-4 text-warning"><i class="bi bi-shield-lock"></i> <?= __('e2ee_init_title') ?></h3>
+                    <p class="text-light mb-4"><?= __('e2ee_init_desc') ?></p>
                     
                     <form id="initForm" onsubmit="handleInit(event)">
                         <div class="mb-3 text-start">
-                            <label class="form-label text-secondary">Придумайте майстер-пароль</label>
+                            <label class="form-label text-secondary"><?= __('label_master_pwd') ?></label>
                             <div class="input-group">
-                                <input type="password" id="masterPasswordInit" class="form-control bg-dark text-light border-secondary" required placeholder="Буде використано для захисту ключів">
+                                <input type="password" id="masterPasswordInit" class="form-control bg-dark text-light border-secondary" required placeholder="<?= __('placeholder_master_pwd') ?>">
                                 <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn" onclick="togglePasswordVisibility()">
                                     <i class="bi bi-eye" id="togglePasswordIcon"></i>
                                 </button>
                             </div>
                             <div id="pwdStatusInit" class="form-text mt-1"></div>
-                            <div class="form-text text-secondary">Цей пароль потрібен буде кожного разу, коли ви відкриваєте чат.</div>
+                            <div class="form-text text-secondary"><?= __('msg_pwd_required_every_time') ?></div>
                         </div>
-                        <button type="submit" class="btn btn-warning w-100" id="initBtn"><i class="bi bi-key"></i> Згенерувати ключі</button>
+                        <button type="submit" class="btn btn-warning w-100" id="initBtn"><i class="bi bi-key"></i> <?= __('btn_generate_keys') ?></button>
                     </form>
                 </div>
             </div>
@@ -290,12 +290,12 @@ $pageTitle = 'Секретний Чат';
                 }
             
                 if (password.length < 6) {
-                    pwdStatus.innerHTML = '<span class="text-secondary">Пароль занадто короткий</span>';
+                    pwdStatus.innerHTML = '<span class="text-secondary"><?= __('err_pwd_too_short') ?></span>';
                     initBtn.disabled = true;
                     return;
                 }
             
-                pwdStatus.innerHTML = '<span class="text-secondary spinner-border spinner-border-sm" role="status"></span> <span class="text-secondary">Перевірка безпеки...</span>';
+                pwdStatus.innerHTML = '<span class="text-secondary spinner-border spinner-border-sm" role="status"></span> <span class="text-secondary"><?= __('msg_security_check') ?></span>';
                 initBtn.disabled = true;
                 
                 timeoutId = setTimeout(async () => {
@@ -321,15 +321,15 @@ $pageTitle = 'Секретний Чат';
                         }
             
                         if (isCompromised) {
-                            pwdStatus.innerHTML = `<span class="text-danger"><i class="bi bi-shield-x"></i> Цей пароль був знайдений у витоках даних (${count} разів). Використовувати його небезпечно!</span>`;
+                            pwdStatus.innerHTML = `<span class="text-danger"><i class="bi bi-shield-x"></i> <?= __('msg_pwd_leaked_1') ?>${count}<?= __('msg_pwd_leaked_2') ?></span>`;
                             initBtn.disabled = true;
                         } else {
-                            pwdStatus.innerHTML = '<span class="text-success"><i class="bi bi-shield-check"></i> Пароль надійний!</span>';
+                            pwdStatus.innerHTML = '<span class="text-success"><i class="bi bi-shield-check"></i> <?= __('msg_pwd_safe') ?></span>';
                             initBtn.disabled = false;
                         }
                     } catch (error) {
                         console.error(error);
-                        pwdStatus.innerHTML = '<span class="text-warning">Не вдалося перевірити пароль.</span>';
+                        pwdStatus.innerHTML = '<span class="text-warning"><?= __('err_pwd_check_failed') ?></span>';
                         initBtn.disabled = false;
                     }
                 }, 500);
@@ -364,7 +364,7 @@ $pageTitle = 'Секретний Чат';
                 e.preventDefault();
                 const password = document.getElementById('masterPasswordInit').value;
                 document.getElementById('initBtn').disabled = true;
-                document.getElementById('initBtn').innerHTML = '<span class="spinner-border spinner-border-sm"></span> Генеруємо...';
+                document.getElementById('initBtn').innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= __('msg_generating') ?>';
                 try {
                     const keyPair = await window.crypto.subtle.generateKey(
                         { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
@@ -383,15 +383,15 @@ $pageTitle = 'Секретний Чат';
                     });
                     
                     if (res.ok) {
-                        toastr.success('Ключі успішно згенеровано!');
+                        toastr.success('<?= __('msg_keys_generated_success') ?>');
                         setTimeout(() => window.location.reload(), 1500);
                     } else {
-                        toastr.error('Помилка збереження ключів на сервері.');
+                        toastr.error('<?= __('err_save_keys_server') ?>');
                         document.getElementById('initBtn').disabled = false;
                     }
                 } catch (err) {
                     console.error(err);
-                    toastr.error('Помилка при створенні ключів.');
+                    toastr.error('<?= __('err_keys_creation') ?>');
                     document.getElementById('initBtn').disabled = false;
                 }
             }
@@ -412,9 +412,9 @@ $pageTitle = 'Секретний Чат';
         
         <?php if (!$isKeySaved && $isInitialized): ?>
         <div id="keyReminderBanner" class="alert alert-danger shadow mb-4">
-            <strong><i class="bi bi-exclamation-triangle-fill fs-5"></i> КРИТИЧНО ВАЖЛИВО!</strong> 
-            Ви ще не зберегли свій приватний ключ. Збережіть його просто зараз, щоб не втратити доступ!
-            <button class="btn btn-sm btn-danger ms-3 text-uppercase fw-bold" onclick="exportPrivateKey()"><i class="bi bi-download"></i> Зберегти ключ</button>
+            <strong><i class="bi bi-exclamation-triangle-fill fs-5"></i> <?= __('warning_critical') ?></strong> 
+            <?= __('msg_key_not_saved') ?>
+            <button class="btn btn-sm btn-danger ms-3 text-uppercase fw-bold" onclick="exportPrivateKey()"><i class="bi bi-download"></i> <?= __('btn_save_key') ?></button>
         </div>
         <?php endif; ?>
 
@@ -422,12 +422,12 @@ $pageTitle = 'Секретний Чат';
             <div class="col-md-4">
                 <div class="tool-box p-0 overflow-hidden h-100 d-flex flex-column">
                     <div class="p-3 bg-dark border-bottom border-secondary d-flex justify-content-between align-items-center">
-                        <span class="text-light fw-bold"><i class="bi bi-people"></i> Контакти</span>
+                        <span class="text-light fw-bold"><i class="bi bi-people"></i> <?= __('tab_contacts') ?></span>
                     </div>
                     
                     <div class="p-3 border-bottom border-secondary">
                         <div class="input-group">
-                            <input type="text" id="searchUsername" class="form-control bg-dark text-light border-secondary" placeholder="Логін користувача">
+                            <input type="text" id="searchUsername" class="form-control bg-dark text-light border-secondary" placeholder="<?= __('placeholder_username') ?>">
                             <button class="btn btn-outline-info" onclick="sendFriendRequest()"><i class="bi bi-person-plus"></i></button>
                         </div>
                     </div>
@@ -441,10 +441,10 @@ $pageTitle = 'Секретний Чат';
                     </div>
 
                     <div class="p-3 border-top border-secondary mt-auto bg-dark">
-                        <h6 class="text-secondary small mb-2"><i class="bi bi-key"></i> Управління ключем</h6>
+                        <h6 class="text-secondary small mb-2"><i class="bi bi-key"></i> <?= __('title_key_management') ?></h6>
                         <div class="d-grid gap-2">
-                            <button onclick="exportPrivateKey()" class="btn btn-sm btn-outline-secondary text-start"><i class="bi bi-download"></i> Завантажити бекап ключа</button>
-                            <button onclick="document.getElementById('importFile').click()" class="btn btn-sm btn-outline-info text-start"><i class="bi bi-upload"></i> Відновити з файлу</button>
+                            <button onclick="exportPrivateKey()" class="btn btn-sm btn-outline-secondary text-start"><i class="bi bi-download"></i> <?= __('btn_download_backup') ?></button>
+                            <button onclick="document.getElementById('importFile').click()" class="btn btn-sm btn-outline-info text-start"><i class="bi bi-upload"></i> <?= __('btn_restore_from_file') ?></button>
                             <input type="file" id="importFile" class="d-none" onchange="importPrivateKey(this)">
                         </div>
                     </div>
@@ -453,12 +453,12 @@ $pageTitle = 'Секретний Чат';
 
             <div class="col-md-8">
                 <div class="tool-box p-0 overflow-hidden h-100 d-flex flex-column">
-                    <div id="chat-header" class="p-3 bg-secondary text-white text-center fw-bold">Оберіть контакт для початку розмови</div>
+                    <div id="chat-header" class="p-3 bg-secondary text-white text-center fw-bold"><?= __('msg_select_contact') ?></div>
                     <div id="chat-window" class="p-4 bg-dark d-none flex-grow-1">
                     </div>
                     <div id="input-area" class="p-3 border-top border-secondary bg-dark d-none mt-auto">
                         <div class="input-group">
-                            <input type="text" id="messageText" class="form-control bg-dark text-light border-secondary" placeholder="Зашифроване повідомлення...">
+                            <input type="text" id="messageText" class="form-control bg-dark text-light border-secondary" placeholder="<?= __('placeholder_encrypted_msg') ?>">
                             <button class="btn btn-info" onclick="sendMessage()"><i class="bi bi-send"></i></button>
                         </div>
                     </div>
@@ -470,13 +470,13 @@ $pageTitle = 'Секретний Чат';
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content bg-dark text-light border-warning">
                     <div class="modal-header border-warning bg-warning text-dark">
-                        <h5 class="modal-title"><i class="bi bi-unlock"></i> Розблокувати доступ</h5>
+                        <h5 class="modal-title"><i class="bi bi-unlock"></i> <?= __('title_unlock_access') ?></h5>
                     </div>
                     <div class="modal-body">
-                        <p class="text-secondary mb-3">Ваші повідомлення наскрізно зашифровані. Введіть майстер-пароль, щоб розшифрувати приватний ключ у браузері.</p>
+                        <p class="text-secondary mb-3"><?= __('msg_enter_master_pwd') ?></p>
                         <div class="input-group">
-                            <input type="password" id="masterPassword" class="form-control bg-dark text-light border-secondary" placeholder="Майстер-пароль" autofocus>
-                            <button class="btn btn-warning" onclick="handleUnlock()">Розблокувати</button>
+                            <input type="password" id="masterPassword" class="form-control bg-dark text-light border-secondary" placeholder="<?= __('placeholder_master_pwd_short') ?>" autofocus>
+                            <button class="btn btn-warning" onclick="handleUnlock()"><?= __('btn_unlock') ?></button>
                         </div>
                     </div>
                 </div>
@@ -497,7 +497,7 @@ $pageTitle = 'Секретний Чат';
             
             const chatWindow = document.getElementById('chat-window');
             if (chatWindow && currentContactId) {
-                chatWindow.innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-lock fs-1"></i><br>Введіть майстер-пароль, щоб розблокувати чат.</div>';
+                chatWindow.innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-lock fs-1"></i><br><?= __('msg_enter_pwd_unlock') ?></div>';
             } else if (chatWindow) {
                 chatWindow.innerHTML = '';
             }
@@ -575,7 +575,7 @@ $pageTitle = 'Секретний Чат';
                 }
             } else {
                 const chatHeader = document.getElementById('chat-header');
-                if (chatHeader) chatHeader.innerHTML = "<span class='text-warning' style='cursor: pointer;' onclick=\"document.getElementById('importFile').click()\"><i class='bi bi-exclamation-triangle'></i> Ключ відсутній у браузері! Імпортуйте файл ключа.</span>";
+                if (chatHeader) chatHeader.innerHTML = "<span class='text-warning' style='cursor: pointer;' onclick=\"document.getElementById('importFile').click()\"><i class='bi bi-exclamation-triangle'></i> <?= __('msg_key_missing_import') ?></span>";
             }
         }
 
@@ -621,12 +621,12 @@ $pageTitle = 'Секретний Чат';
                 await savePrivateKeyToServer();
                 if (currentContactId) await loadMessages();
                 updateUnreadCounters();
-                toastr.success("Чат успішно розблоковано");
+                toastr.success("<?= __('msg_chat_unlocked') ?>");
             } else {
                 passInput.classList.add('is-invalid');
                 passInput.value = '';
                 passInput.focus();
-                toastr.error("Невірний майстер-пароль!");
+                toastr.error("<?= __('err_invalid_master_pwd') ?>");
             }
         }
 
@@ -649,7 +649,7 @@ $pageTitle = 'Секретний Чат';
 
         function exportPrivateKey() {
             const data = localStorage.getItem('chat_priv_key_encrypted');
-            if (!data) return toastr.warning("Немає ключа для експорту.");
+            if (!data) return toastr.warning("<?= __('err_no_key_to_export') ?>");
             let userEmail = localStorage.getItem('chat_user_username') || 'backup';
             let safeName = userEmail.replace(/[^a-z0-9]/gi, '_').toLowerCase();
             const blob = new Blob([data], { type: 'application/json' });
@@ -679,7 +679,7 @@ $pageTitle = 'Секретний Чат';
                 if (content.startsWith('{')) {
                     localStorage.setItem('chat_priv_key_encrypted', content);
                 } else {
-                    const password = prompt("Файл містить незашифрований ключ. Введіть майстер-пароль для захисту:");
+                    const password = prompt("<?= __('msg_file_unencrypted_enter_pwd') ?>");
                     if (!password) { input.value = ''; return; }
                     await encryptAndSaveKey(content, password);
                 }
@@ -705,7 +705,7 @@ $pageTitle = 'Секретний Чат';
 
         async function decryptHybrid(jsonPacket) {
             try {
-                if (!decryptedPrivKey) return "[Чат заблоковано]";
+                if (!decryptedPrivKey) return "<?= __('msg_chat_locked') ?>";
                 const data = JSON.parse(jsonPacket);
                 const rsaKey = await window.crypto.subtle.importKey(
                     "pkcs8", base64ToArrayBuffer(decryptedPrivKey), { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]
@@ -714,7 +714,7 @@ $pageTitle = 'Секретний Чат';
                 const aesKey = await window.crypto.subtle.importKey("raw", decAesKeyRaw, "AES-GCM", false, ["decrypt"]);
                 const decText = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: base64ToArrayBuffer(data.iv) }, aesKey, base64ToArrayBuffer(data.content));
                 return new TextDecoder().decode(decText);
-            } catch (e) { return "[Помилка дешифрування]"; }
+            } catch (e) { return "<?= __('err_decryption') ?>"; }
         }
 
         async function selectContact(id, username, pubKeyB64, event) {
@@ -725,7 +725,7 @@ $pageTitle = 'Секретний Чат';
             if (event && event.currentTarget) event.currentTarget.classList.add('active-user');
 
             document.getElementById('chat-window').innerHTML = '';
-            document.getElementById('chat-header').innerHTML = `<i class="bi bi-chat-dots"></i> Чат з <strong>${username}</strong>`;
+            document.getElementById('chat-header').innerHTML = `<i class="bi bi-chat-dots"></i> <?= __('chat_with') ?><strong>${username}</strong>`;
             document.getElementById('chat-window').classList.remove('d-none');
             
             if (decryptedPrivKey) document.getElementById('input-area').classList.remove('d-none');
@@ -760,7 +760,7 @@ $pageTitle = 'Секретний Чат';
             const inputArea = document.getElementById('input-area');
             
             if (!decryptedPrivKey) {
-                if (chatBox) chatBox.innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-lock fs-1"></i><br>Введіть майстер-пароль, щоб розблокувати чат.</div>';
+                if (chatBox) chatBox.innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-lock fs-1"></i><br><?= __('msg_enter_pwd_unlock') ?></div>';
                 if (inputArea) inputArea.classList.add('d-none');
                 return;
             }
@@ -831,10 +831,10 @@ $pageTitle = 'Секретний Чат';
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    toastr.success('Заявку відправлено!');
+                    toastr.success('<?= __('msg_req_sent') ?>');
                     usernameInput.value = '';
                 } else { toastr.error(data.message); }
-            } catch (e) { toastr.error('Мережева помилка'); }
+            } catch (e) { toastr.error('<?= __('err_network') ?>'); }
         }
 
         async function loadFriendRequests() {
@@ -846,7 +846,7 @@ $pageTitle = 'Секретний Чат';
 
             if (requests.length > 0) {
                 container.classList.remove('d-none');
-                let html = '<div class="p-2 bg-dark text-warning small fw-bold"><i class="bi bi-bell"></i> Нові заявки:</div>';
+                let html = '<div class="p-2 bg-dark text-warning small fw-bold"><i class="bi bi-bell"></i> <?= __('msg_new_requests') ?></div>';
                 requests.forEach(req => {
                     const safeUsername = req.username.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     html += `
