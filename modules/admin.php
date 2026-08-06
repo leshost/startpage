@@ -33,6 +33,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         exit;
     }
 
+    if ($_POST['action'] === 'delete_user' && isset($_POST['user_id'])) {
+        $userId = (int)$_POST['user_id'];
+        if ($userId === $_SESSION['user_id']) {
+            echo json_encode(['success' => false, 'message' => __('err_delete_self')]);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && $user['is_admin']) {
+            echo json_encode(['success' => false, 'message' => __('err_delete_admin')]);
+            exit;
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            $queries = [
+                "DELETE FROM friends WHERE user_id = ? OR friend_id = ?" => [$userId, $userId],
+                "DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?" => [$userId, $userId],
+                "DELETE FROM notes WHERE user_id = ?" => [$userId],
+                "DELETE FROM sites WHERE user = ?" => [$userId],
+                "DELETE FROM invite_codes WHERE created_by = ?" => [$userId],
+                "UPDATE invite_codes SET used_by = NULL, used_at = NULL WHERE used_by = ?" => [$userId],
+                "DELETE FROM kanban_shares WHERE user_id = ?" => [$userId],
+                "DELETE FROM task_views WHERE user_id = ?" => [$userId],
+                "DELETE tasks FROM tasks INNER JOIN kanban_projects ON tasks.project_id = kanban_projects.id WHERE kanban_projects.user_id = ?" => [$userId],
+                "DELETE FROM tasks WHERE user_id = ?" => [$userId],
+                "DELETE FROM kanban_projects WHERE user_id = ?" => [$userId],
+            ];
+
+            foreach ($queries as $sql => $params) {
+                try {
+                    $pdo->prepare($sql)->execute($params);
+                } catch (PDOException $e) {
+                    // Ignore missing tables if module was never loaded
+                }
+            }
+
+            $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+
+            $pdo->commit();
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            echo json_encode(['success' => false, 'message' => __('err_db')]);
+        }
+        exit;
+    }
+
     // Управління спільними сайтами
     if ($_POST['action'] === 'add_shared_site' && isset($_POST['name'], $_POST['url'], $_POST['icon'])) {
         $url = trim($_POST['url']);
@@ -190,6 +245,9 @@ $pageTitle = 'Адмін Панель';
                                         <?php if($u['id'] !== $_SESSION['user_id'] && !$u['is_admin']): ?>
                                             <button class="btn btn-sm <?= $u['is_blocked'] ? 'btn-success' : 'btn-danger' ?>" onclick="toggleBlock(<?= $u['id'] ?>, this)">
                                                 <?= $u['is_blocked'] ? '<i class="bi bi-unlock"></i> ' . __('btn_unblock') : '<i class="bi bi-lock"></i> ' . __('btn_block') ?>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteUser(<?= $u['id'] ?>, this)" title="<?= __('btn_delete') ?>">
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         <?php endif; ?>
                                     </td>
@@ -358,6 +416,29 @@ function toggleBlock(userId, btn) {
             }
         } else {
             toastr.error(data.message || '<?= __('err_general') ?>');
+        }
+    })
+    .catch(err => console.error(err));
+}
+
+function deleteUser(userId, btn) {
+    if(!confirm('<?= __('msg_confirm_delete_user') ?>')) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'delete_user');
+    formData.append('user_id', userId);
+
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            toastr.success('<?= __('msg_deleted_success') ?>');
+            btn.closest('tr').remove();
+        } else {
+            toastr.error(data.message || '<?= __('err_delete') ?>');
         }
     })
     .catch(err => console.error(err));

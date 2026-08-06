@@ -1,4 +1,5 @@
 <?php
+//exit('Maintenance');
 require_once 'config/config.php';
 require_once 'includes/functions.php';
 

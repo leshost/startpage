@@ -242,6 +242,29 @@ if (isLoggedIn()) {
 $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $userIp = getUserIP();
+$ipCountry = '';
+$ipIsp = '';
+if (!isset($_SESSION['ip_details_country']) || $_SESSION['ip_details_ip'] !== $userIp) {
+    if (!in_array($userIp, ['127.0.0.1', '::1'])) {
+        $ctx = stream_context_create(['http' => ['timeout' => 1]]);
+        $geo = @file_get_contents("http://ip-api.com/json/{$userIp}?fields=country,countryCode,isp", false, $ctx);
+        if ($geo) {
+            $geoData = json_decode($geo, true);
+            if (!empty($geoData['country'])) {
+                $cc = strtolower($geoData['countryCode'] ?? '');
+                $flag = $cc ? "<img src=\"https://flagcdn.com/16x12/{$cc}.png\" alt=\"\" style=\"vertical-align: middle; margin-top: -2px; margin-right: 4px;\">" : '';
+                $ipCountry = $flag . htmlspecialchars($geoData['country']);
+                $ipIsp = htmlspecialchars($geoData['isp'] ?? '');
+            }
+        }
+    }
+    $_SESSION['ip_details_country'] = $ipCountry;
+    $_SESSION['ip_details_isp'] = $ipIsp;
+    $_SESSION['ip_details_ip'] = $userIp;
+} else {
+    $ipCountry = $_SESSION['ip_details_country'];
+    $ipIsp = $_SESSION['ip_details_isp'];
+}
 $clientInfo = getClientInfo();
 
 $chatUnread = [];
@@ -306,7 +329,19 @@ body.edit-mode-active .site-item:active {
         
         <!-- Left: IP and OS Info -->
         <div class="col-md-3 text-start text-light text-shadow d-none d-md-block">
-            <h5 class="fw-bold mb-1"><i class="bi bi-hdd-network text-success"></i> <?= htmlspecialchars($userIp) ?></h5>
+            <h5 class="fw-bold mb-1">
+                <i class="bi bi-hdd-network text-success"></i> <?= htmlspecialchars($userIp) ?>
+            </h5>
+            <?php if ($ipCountry || $ipIsp): ?>
+                <div class="small text-secondary mb-1" style="font-size: 0.85em; line-height: 1.4;">
+                    <?php if ($ipCountry): ?>
+                        <div><?= $ipCountry ?></div>
+                    <?php endif; ?>
+                    <?php if ($ipIsp): ?>
+                        <div><i class="bi bi-router text-secondary me-1"></i><?= $ipIsp ?></div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
             <p class="small text-light mb-0" style="opacity: 0.8;">
                 <i class="bi bi-browser-chrome text-info"></i> <?= htmlspecialchars($clientInfo['browser']) ?> &nbsp;|&nbsp; 
                 <i class="bi bi-display text-warning"></i> <?= htmlspecialchars($clientInfo['os']) ?>
